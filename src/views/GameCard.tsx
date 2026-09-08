@@ -1,20 +1,29 @@
-import { SUIT_SYMBOLS, type Game } from '../games'
+import { SUIT_SYMBOLS, isPlayable, playerCountLabel, supportsPlayerCount, type Game } from '../games'
 
 type GameCardProps = {
   game: Game
+  playerCount: number
   onSelect: (game: Game) => void
 }
 
-export default function GameCard({ game, onSelect }: GameCardProps) {
+export default function GameCard({ game, playerCount, onSelect }: GameCardProps) {
   const symbol = SUIT_SYMBOLS[game.suit]
+  const fitsPlayers = supportsPlayerCount(game, playerCount)
+  const playable = isPlayable(game, playerCount)
+
+  const badge = !game.available
+    ? 'Coming soon'
+    : fitsPlayers
+      ? null
+      : `Needs ${playerCountLabel(game)}`
 
   return (
     <button
       type="button"
       className={`playing-card suit-${game.suit}`}
       onClick={() => onSelect(game)}
-      disabled={!game.available}
-      aria-label={`${game.name}${game.available ? '' : ' (coming soon)'}`}
+      disabled={!playable}
+      aria-label={`${game.name}${badge === null ? '' : ` (${badge})`}`}
     >
       <span className="card-corner card-corner--top" aria-hidden="true">
         <span className="card-rank">{game.rank}</span>
@@ -25,8 +34,8 @@ export default function GameCard({ game, onSelect }: GameCardProps) {
         <span className="card-pip" aria-hidden="true">{symbol}</span>
         <span className="card-title">{game.name}</span>
         <span className="card-description">{game.description}</span>
-        <span className="card-players">{game.players}</span>
-        {!game.available && <span className="card-badge">Coming soon</span>}
+        <span className="card-players">{playerCountLabel(game)}</span>
+        {badge !== null && <span className="card-badge">{badge}</span>}
       </span>
 
       <span className="card-corner card-corner--bottom" aria-hidden="true">

@@ -268,3 +268,313 @@ button:disabled {
     font-size: 0.72rem;
   }
 }
+
+/* ─── Shared layout helpers ─────────────────────────────────── */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.panel-header {
+  text-align: center;
+  color: #fff;
+}
+
+.panel-header h1 {
+  color: #fff;
+  font-size: clamp(1.8rem, 7vw, 2.6rem);
+  letter-spacing: -0.03em;
+}
+
+.panel-header .tagline {
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 0.95rem;
+}
+
+.panel {
+  width: 100%;
+  max-width: 520px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  padding: 20px;
+  background: var(--surface);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--card-shadow);
+}
+
+.panel h2 {
+  font-size: 1.1rem;
+}
+
+.panel-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px;
+}
+
+.hint {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.btn-secondary {
+  background: var(--surface-raised);
+  color: var(--text-strong);
+  border: 1px solid var(--border);
+}
+
+.btn-secondary:not(:disabled):hover {
+  opacity: 0.88;
+}
+
+.btn-ghost {
+  background: transparent;
+  color: rgba(255, 255, 255, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  padding: 6px 14px;
+  font-size: 0.85rem;
+}
+
+.btn-ghost:disabled {
+  opacity: 0.4;
+}
+
+button:disabled {
+  opacity: 0.6;
+}
+
+/* ─── Player setup view ─────────────────────────────────────── */
+.view-player-setup,
+.view-blackjack {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+  padding: 40px 16px;
+}
+
+.player-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.player-row {
+  display: flex;
+  gap: 8px;
+}
+
+.player-row input {
+  flex: 1;
+  font-family: var(--sans);
+  font-size: 1rem;
+  padding: 10px 12px;
+  color: var(--text-strong);
+  background: var(--surface-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.player-row .btn-ghost {
+  color: var(--text-muted);
+  border-color: var(--border);
+}
+
+/* ─── Player summary on game select ─────────────────────────── */
+.player-summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: 28px;
+}
+
+.player-chips {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.player-chip {
+  display: flex;
+  gap: 8px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+  font-size: 0.85rem;
+}
+
+.player-chip-cash {
+  font-weight: 700;
+}
+
+/* ─── Blackjack hands ───────────────────────────────────────── */
+.hand {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+}
+
+.hand-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 54px;
+  aspect-ratio: 5 / 7;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  font-weight: 700;
+  line-height: 1.1;
+}
+
+.hand-card--back {
+  background: repeating-linear-gradient(45deg, var(--accent), var(--accent) 6px, var(--bg-accent) 6px, var(--bg-accent) 12px);
+  border-color: var(--bg-accent);
+}
+
+.hand-card.suit-hearts,
+.hand-card.suit-diamonds {
+  color: var(--red);
+}
+
+.hand-card.suit-spades,
+.hand-card.suit-clubs {
+  color: var(--black);
+}
+
+.hand-card-rank {
+  font-size: 1.1rem;
+}
+
+.hand-card-suit {
+  font-size: 1.2rem;
+}
+
+/* ─── Standings and results ─────────────────────────────────── */
+.standings,
+.results {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  max-width: 520px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.standing {
+  display: grid;
+  grid-template-columns: 1fr auto auto auto;
+  gap: 10px;
+  align-items: center;
+  padding: 8px 14px;
+  border-radius: var(--radius);
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+  font-size: 0.85rem;
+}
+
+.standing--active {
+  background: rgba(255, 255, 255, 0.28);
+}
+
+.standing-name {
+  font-weight: 700;
+}
+
+.standing-status {
+  color: rgba(255, 255, 255, 0.75);
+}
+
+.standing-cash {
+  font-weight: 700;
+}
+
+.result {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px;
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  border-left: 6px solid var(--border);
+  box-shadow: var(--shadow);
+}
+
+.result--win {
+  border-left-color: var(--accent);
+}
+
+.result--lose {
+  border-left-color: var(--red);
+}
+
+.result-head,
+.result-money {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: baseline;
+}
+
+.result-name {
+  font-weight: 700;
+  color: var(--text-strong);
+}
+
+.result-score {
+  font-weight: 700;
+  font-size: 1.2rem;
+  color: var(--text-strong);
+}
+
+.result-money {
+  font-size: 0.85rem;
+  color: var(--text);
+}
+
+.result-outcome,
+.result-total {
+  font-weight: 700;
+}
+
+.bet-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.bet-label {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.bet-actions button {
+  padding: 8px 16px;
+}

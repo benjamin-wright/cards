@@ -2,6 +2,21 @@
 
 A collection of card games for local device play, built using react and typescript.
 
+## Games
+
+Players are entered once on the opening screen (2-4 players, £100 each) and the
+game selection cards enable or disable themselves based on that player count.
+
+### Blackjack
+
+Two cards are dealt face down to each player and the house, in a randomised
+order per hand with the house last. Each player views their own cards, may
+raise their £1 entry bet once (£1, £10 or £100), then twists or sticks. Aces
+count as 1 or 11 in the player's favour, over 21 is bust, and the house always
+twists below 15 and sticks on 15 or more. Beat the house to double your bet,
+lose it if the house wins, or get it back on a draw. Every hand ends with all
+cards revealed and a summary of winnings, losses and new totals.
+
 ## Development
 
 ```bash
