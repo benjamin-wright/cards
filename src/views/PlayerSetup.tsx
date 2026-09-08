@@ -1,13 +1,5 @@
 import { useState } from 'react'
-import {
-  MAX_PLAYERS,
-  MIN_PLAYERS,
-  STARTING_CASH,
-  createPlayer,
-  displayName,
-  resetCash,
-  type Player,
-} from '../players'
+import { STARTING_CASH, createPlayer, displayName, resetCash, type Player } from '../players'
 
 type PlayerSetupProps = {
   players: Player[]
@@ -23,14 +15,6 @@ export default function PlayerSetup({ players, onConfirm }: PlayerSetupProps) {
     setDraft(current => current.map(player => (player.id === id ? { ...player, name } : player)))
   }
 
-  const addPlayer = () => {
-    setDraft(current => (current.length >= MAX_PLAYERS ? current : [...current, createPlayer(current.length)]))
-  }
-
-  const removePlayer = (id: string) => {
-    setDraft(current => (current.length <= MIN_PLAYERS ? current : current.filter(player => player.id !== id)))
-  }
-
   const resetTotals = () => {
     setDraft(current => resetCash(current))
   }
@@ -44,7 +28,7 @@ export default function PlayerSetup({ players, onConfirm }: PlayerSetupProps) {
     <main className="view-player-setup">
       <header className="panel-header">
         <h1>Who's playing?</h1>
-        <p className="tagline">Everyone starts with £{STARTING_CASH}</p>
+        <p className="tagline">Two players, £{STARTING_CASH} each, sat across the table</p>
       </header>
 
       <form className="panel" onSubmit={submit}>
@@ -63,28 +47,11 @@ export default function PlayerSetup({ players, onConfirm }: PlayerSetupProps) {
                 onChange={event => rename(player.id, event.target.value)}
               />
               <span className="player-row-cash">£{player.cash}</span>
-              <button
-                type="button"
-                className="btn-ghost"
-                onClick={() => removePlayer(player.id)}
-                disabled={draft.length <= MIN_PLAYERS}
-                aria-label={`Remove player ${index + 1}`}
-              >
-                ✕
-              </button>
             </li>
           ))}
         </ul>
 
         <div className="panel-actions">
-          <button
-            type="button"
-            className="btn-secondary"
-            onClick={addPlayer}
-            disabled={draft.length >= MAX_PLAYERS}
-          >
-            Add player
-          </button>
           <button
             type="button"
             className="btn-secondary"
@@ -97,8 +64,6 @@ export default function PlayerSetup({ players, onConfirm }: PlayerSetupProps) {
             Continue
           </button>
         </div>
-
-        <p className="hint">Between {MIN_PLAYERS} and {MAX_PLAYERS} players.</p>
       </form>
     </main>
   )

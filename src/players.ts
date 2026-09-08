@@ -4,8 +4,9 @@ export type Player = {
   cash: number
 }
 
+/** The app always seats exactly two players, facing each other across the device. */
 export const MIN_PLAYERS = 2
-export const MAX_PLAYERS = 4
+export const MAX_PLAYERS = 2
 export const STARTING_CASH = 100
 
 export function createPlayer(index: number): Player {

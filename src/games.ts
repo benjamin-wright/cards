@@ -24,7 +24,7 @@ export const games: Game[] = [
     name: 'Blackjack',
     description: 'Twist or stick to get closest to 21 without going bust.',
     minPlayers: 2,
-    maxPlayers: 4,
+    maxPlayers: 2,
     rank: 'A',
     suit: 'spades',
     available: true,
