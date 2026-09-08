@@ -5,6 +5,7 @@ const PREFIX = 'cards.'
 export const STORAGE_KEYS = {
   app: 'app',
   blackjack: 'blackjack',
+  rummy: 'rummy',
 } as const
 
 function storage(): Storage | null {

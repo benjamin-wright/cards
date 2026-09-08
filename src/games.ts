@@ -34,10 +34,10 @@ export const games: Game[] = [
     name: 'Rummy',
     description: 'Draw, discard and lay down sets and runs to go out first.',
     minPlayers: 2,
-    maxPlayers: 6,
+    maxPlayers: 2,
     rank: 'K',
     suit: 'hearts',
-    available: false,
+    available: true,
   },
   {
     id: 'cribbage',

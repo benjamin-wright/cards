@@ -24,6 +24,29 @@ twists below 15 and sticks on 15 or more. Beat the house to double your bet,
 lose it if the house wins, or get it back on a draw. Every hand ends with all
 cards revealed and a summary of winnings, losses and new totals.
 
+### Rummy
+
+Gin rummy for the same two players, with no betting. Ten cards are dealt to
+each player, one card starts the discard pile and the rest becomes the stock.
+On your turn you draw from the stock or take the face-up discard (which can't
+be thrown straight back), then discard a card. Sets and runs are formed
+automatically and shown grouped, with the left-over deadwood counted for you,
+so all you have to do is tap the card you want to throw.
+
+Knock by discarding when your deadwood is 10 or less, or go gin with none at
+all. The defender's deadwood is laid off onto the knocker's melds
+automatically, then the knocker scores the difference — unless the defender
+matches or beats it, which is an undercut worth the difference plus 25. Gin is
+worth the defender's whole hand plus 25, and the hand is abandoned as a draw if
+the stock runs down to two cards. First to 100 points wins the game.
+
+Hands are dealt face down so neither player can read the other's cards. In
+landscape the device is assumed to be lying flat between the two players, so
+both hands stay face down and each side gets its own "Show cards" / "Hide
+cards" toggle, and cards go back face down as soon as the turn passes. In
+portrait the device is being held and passed around, so the player to act sees
+their own hand automatically and no toggle is offered.
+
 ## Development
 
 ```bash

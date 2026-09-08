@@ -1,36 +1,14 @@
-import type { Suit } from '../games'
+import type { Card, Rank } from '../cards'
 
-export type Rank = 'A' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' | '10' | 'J' | 'Q' | 'K'
-
-export type Card = {
-  rank: Rank
-  suit: Suit
-}
+export type { Card, Rank, Rng } from '../cards'
+export { RANKS, SUITS, createDeck, shuffle } from '../cards'
 
 export type Outcome = 'win' | 'lose' | 'push'
-
-export type Rng = () => number
-
-export const RANKS: Rank[] = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K']
-export const SUITS: Suit[] = ['spades', 'hearts', 'diamonds', 'clubs']
 
 export const ANTE = 1
 export const RAISE_OPTIONS = [1, 10, 100]
 export const HOUSE_STICK_SCORE = 15
 export const TARGET_SCORE = 21
-
-export function createDeck(): Card[] {
-  return SUITS.flatMap(suit => RANKS.map(rank => ({ rank, suit })))
-}
-
-export function shuffle<T>(items: T[], rng: Rng = Math.random): T[] {
-  const result = [...items]
-  for (let i = result.length - 1; i > 0; i -= 1) {
-    const j = Math.floor(rng() * (i + 1))
-    ;[result[i], result[j]] = [result[j], result[i]]
-  }
-  return result
-}
 
 function cardValue(rank: Rank): number {
   if (rank === 'A') return 1

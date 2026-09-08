@@ -1,6 +1,7 @@
 import GameSelect from './views/GameSelect'
 import PlayerSetup from './views/PlayerSetup'
 import Blackjack from './blackjack/Blackjack'
+import Rummy from './rummy/Rummy'
 import type { Result } from './blackjack/round'
 import { games } from './games'
 import { isPlayerList, type Player } from './players'
@@ -43,14 +44,19 @@ function App() {
     }))
   }
 
+  const clearGames = () => {
+    clearState(STORAGE_KEYS.blackjack)
+    clearState(STORAGE_KEYS.rummy)
+  }
+
   /** Leaving a game abandons the hand in progress. */
   const leaveGame = () => {
-    clearState(STORAGE_KEYS.blackjack)
+    clearGames()
     setState(current => ({ ...current, gameId: null }))
   }
 
   const editPlayers = () => {
-    clearState(STORAGE_KEYS.blackjack)
+    clearGames()
     setState(current => ({ ...current, gameId: null, editingPlayers: true }))
   }
 
@@ -75,6 +81,8 @@ function App() {
         />
       ) : game.id === 'blackjack' ? (
         <Blackjack players={players} onSettle={settle} onExit={leaveGame} />
+      ) : game.id === 'rummy' ? (
+        <Rummy players={players} onExit={leaveGame} />
       ) : (
         <main className="view-game-placeholder">
           <h2>{game.name}</h2>

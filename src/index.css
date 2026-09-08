@@ -719,3 +719,151 @@ button:disabled {
   font-weight: 700;
   color: var(--text-strong);
 }
+
+/* ─── Rummy ─────────────────────────────────────────────────── */
+.view-rummy {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+  padding: 40px 16px;
+}
+
+.view-rummy--table {
+  padding: 12px;
+  gap: 12px;
+  justify-content: space-between;
+}
+
+.view-rummy .seat-panel {
+  gap: 8px;
+}
+
+.seat-panel--active {
+  border-left-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-border), var(--card-shadow);
+}
+
+.seat-panel-score {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--accent);
+  white-space: nowrap;
+}
+
+/* Melds are formed automatically, so each group is boxed and labelled with
+   the deadwood left over at the end. */
+.grouped-hand {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+}
+
+.meld {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 8px;
+  border: 1px dashed var(--accent-border);
+  border-radius: var(--radius);
+  background: var(--accent-bg);
+}
+
+.meld--deadwood {
+  border-style: solid;
+  border-color: var(--border);
+  background: var(--surface-raised);
+}
+
+.meld-label {
+  font-size: 0.62rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+}
+
+button.hand-card {
+  padding: 0;
+  transition: transform 0.12s, box-shadow 0.12s;
+}
+
+button.hand-card:not(:disabled):hover {
+  transform: translateY(-4px);
+}
+
+.hand-card--selected {
+  outline: 3px solid var(--accent);
+  outline-offset: 1px;
+  transform: translateY(-6px);
+}
+
+.hand-card--drawn {
+  box-shadow: 0 0 0 2px var(--red);
+}
+
+.hand-card--empty {
+  background: transparent;
+  border-style: dashed;
+  box-shadow: none;
+}
+
+.pile-area {
+  grid-area: house;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  color: #fff;
+}
+
+.piles {
+  display: flex;
+  gap: 12px;
+}
+
+.pile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.pile-label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.pile-area .hint {
+  color: rgba(255, 255, 255, 0.75);
+}
+
+.pile-result {
+  color: #fff;
+  font-weight: 700;
+  text-align: center;
+}
+
+@media (orientation: landscape) {
+  .pile-area {
+    flex: 1;
+    justify-content: center;
+    padding: 0 8px;
+  }
+
+  .view-rummy .seat-panel .hand-card {
+    width: 34px;
+  }
+
+  .view-rummy .meld {
+    padding: 4px 6px;
+  }
+}
