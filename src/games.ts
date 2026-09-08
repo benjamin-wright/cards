@@ -4,7 +4,8 @@ export type Game = {
   id: string
   name: string
   description: string
-  players: string
+  minPlayers: number
+  maxPlayers: number
   rank: string
   suit: Suit
   available: boolean
@@ -19,19 +20,21 @@ export const SUIT_SYMBOLS: Record<Suit, string> = {
 
 export const games: Game[] = [
   {
-    id: 'whist',
-    name: 'Whist',
-    description: 'Classic trick taking for four players in two partnerships.',
-    players: '4 players',
+    id: 'blackjack',
+    name: 'Blackjack',
+    description: 'Twist or stick to get closest to 21 without going bust.',
+    minPlayers: 2,
+    maxPlayers: 4,
     rank: 'A',
     suit: 'spades',
-    available: false,
+    available: true,
   },
   {
     id: 'rummy',
     name: 'Rummy',
     description: 'Draw, discard and lay down sets and runs to go out first.',
-    players: '2-6 players',
+    minPlayers: 2,
+    maxPlayers: 6,
     rank: 'K',
     suit: 'hearts',
     available: false,
@@ -40,7 +43,8 @@ export const games: Game[] = [
     id: 'cribbage',
     name: 'Cribbage',
     description: 'Peg your way to 121 with fifteens, runs and pairs.',
-    players: '2-3 players',
+    minPlayers: 2,
+    maxPlayers: 3,
     rank: 'Q',
     suit: 'diamonds',
     available: false,
@@ -49,9 +53,24 @@ export const games: Game[] = [
     id: 'hearts',
     name: 'Hearts',
     description: 'Avoid the hearts and the queen of spades, or shoot the moon.',
-    players: '4 players',
+    minPlayers: 4,
+    maxPlayers: 4,
     rank: 'J',
     suit: 'clubs',
     available: false,
   },
 ]
+
+export function playerCountLabel(game: Game): string {
+  return game.minPlayers === game.maxPlayers
+    ? `${game.minPlayers} players`
+    : `${game.minPlayers}-${game.maxPlayers} players`
+}
+
+export function supportsPlayerCount(game: Game, playerCount: number): boolean {
+  return playerCount >= game.minPlayers && playerCount <= game.maxPlayers
+}
+
+export function isPlayable(game: Game, playerCount: number): boolean {
+  return game.available && supportsPlayerCount(game, playerCount)
+}
