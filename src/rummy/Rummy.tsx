@@ -3,7 +3,7 @@ import type { Card } from '../cards'
 import { cardKey } from '../cards'
 import { SUIT_SYMBOLS } from '../games'
 import type { Player } from '../players'
-import { useOrientation } from '../orientation'
+import { nearSeat, useDeviceView } from '../orientation'
 import { STORAGE_KEYS, usePersistentState } from '../storage'
 import CardFace from '../views/CardFace'
 import { KNOCK_LIMIT, bestLayout, type Layout, type Meld } from './melds'
@@ -298,7 +298,9 @@ function SeatPanel({
         </div>
       )}
 
-      {result === null && active && !visible && <p className="hint">Show your cards to take your turn</p>}
+      {result === null && active && !visible && (
+        <p className="hint">{canToggle ? 'Show your cards to take your turn' : 'Turn the device around to take your turn'}</p>
+      )}
       {result === null && active && visible && round.phase === 'discard' && selected === null && (
         <p className="hint">Tap a card to discard it (knock at {KNOCK_LIMIT} deadwood or less)</p>
       )}
@@ -316,7 +318,7 @@ function Screen({ onExit, children }: { onExit: () => void; children: ReactNode 
 }
 
 export default function Rummy({ players, onExit }: RummyProps) {
-  const orientation = useOrientation()
+  const { orientation, posture, angle, tiltAccess, requestTilt } = useDeviceView()
   const [state, setState] = usePersistentState<RummyState>(
     STORAGE_KEYS.rummy,
     () => ({
@@ -347,9 +349,7 @@ export default function Rummy({ players, onExit }: RummyProps) {
     )
   }
 
-  const [bottom, top] = round.hands
   const result = round.result
-
   const setRound = (next: Round) => {
     setState(current => {
       if (next.result === null || current.round?.result !== null) {
@@ -396,12 +396,23 @@ export default function Rummy({ players, onExit }: RummyProps) {
     })
   }
 
-  // Landscape means the device is lying between the players, so both hands
-  // stay face down behind a per-player toggle. In portrait the device is
-  // passed around, so the player to act simply sees their own cards.
-  const shared = orientation === 'landscape'
-  const isVisible = (hand: Hand) =>
-    result !== null || (shared ? revealed.includes(hand.playerId) : round.turn === hand.playerId)
+  // Three postures, told apart by the tilt sensor and the screen rotation the
+  // browser reports as the device is turned around:
+  //   - flat on the table: shared between both players, so each hand stays
+  //     face down behind its own show/hide toggle.
+  //   - held up in landscape: the browser turns the page to face whoever is
+  //     holding it, so the seat at the bottom of the screen is theirs and only
+  //     that hand is shown.
+  // Without tilt permission the toggles are always used, which is safe.
+  const held = posture === 'upright' && orientation === 'landscape' && tiltAccess === 'granted'
+  const nearIndex = nearSeat(angle)
+  const holder = round.hands[nearIndex]
+
+  const isVisible = (hand: Hand) => {
+    if (result !== null) return true
+    if (held) return hand.playerId === holder.playerId
+    return revealed.includes(hand.playerId)
+  }
 
   const toggle = (hand: Hand) => {
     setSelected(null)
@@ -421,7 +432,7 @@ export default function Rummy({ players, onExit }: RummyProps) {
       score={scores[hand.playerId] ?? 0}
       round={round}
       visible={isVisible(hand)}
-      canToggle={shared && result === null}
+      canToggle={!held && result === null}
       onToggle={() => toggle(hand)}
       onDrawStock={() => act(drawFromStock(round, hand.playerId))}
       onDrawDiscard={() => act(drawFromDiscard(round, hand.playerId))}
@@ -453,10 +464,18 @@ export default function Rummy({ players, onExit }: RummyProps) {
             </div>
 
             {result === null ? (
-              <p className="hint">
-                {round.hands.find(hand => hand.playerId === round.turn)?.name} to{' '}
-                {round.phase === 'draw' ? 'draw' : 'discard'}
-              </p>
+              <>
+                <p className="hint">
+                  {round.hands.find(hand => hand.playerId === round.turn)?.name} to{' '}
+                  {round.phase === 'draw' ? 'draw' : 'discard'}
+                </p>
+                {tiltAccess === 'prompt' && (
+                  <button type="button" className="btn-secondary" onClick={requestTilt}>
+                    Use tilt to show hands
+                  </button>
+                )}
+                {held && <p className="hint">Holding — {holder.name}'s hand only</p>}
+              </>
             ) : (
               <>
                 <p className="pile-result">{resultMessage(result)}</p>
@@ -480,8 +499,8 @@ export default function Rummy({ players, onExit }: RummyProps) {
           </div>
         </div>
 
-        <div className="seat-area seat-area--top">{panelFor(top)}</div>
-        <div className="seat-area seat-area--bottom">{panelFor(bottom)}</div>
+        <div className="seat-area seat-area--top">{panelFor(round.hands[1 - nearIndex])}</div>
+        <div className="seat-area seat-area--bottom">{panelFor(round.hands[nearIndex])}</div>
       </div>
     </main>
   )

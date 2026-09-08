@@ -40,12 +40,22 @@ matches or beats it, which is an undercut worth the difference plus 25. Gin is
 worth the defender's whole hand plus 25, and the hand is abandoned as a draw if
 the stock runs down to two cards. First to 100 points wins the game.
 
-Hands are dealt face down so neither player can read the other's cards. In
-landscape the device is assumed to be lying flat between the two players, so
-both hands stay face down and each side gets its own "Show cards" / "Hide
-cards" toggle, and cards go back face down as soon as the turn passes. In
-portrait the device is being held and passed around, so the player to act sees
-their own hand automatically and no toggle is offered.
+Hands are dealt face down so neither player can read the other's cards. The
+tilt sensor and the screen rotation together tell three positions apart:
+
+- **Flat on the table** — the device is shared, so both hands stay face down
+  and each side gets its own "Show cards" / "Hide cards" toggle. Cards go back
+  face down as soon as the turn passes on.
+- **Held up in landscape** — the browser turns the page to face whoever picked
+  it up, so the seat at the bottom of the screen is theirs. Only that hand is
+  shown, and it stays shown whether or not it's their turn.
+- **Held upside down in landscape** — the same, for the player on the other
+  side of the table.
+
+Tilt sensors need permission on some platforms, so a "Use tilt to show hands"
+button appears when the browser asks for it. Until that's granted (or if the
+device has no tilt sensor at all) the manual toggles are used throughout.
+Reveals are never stored, so a refresh always comes back with hands face down.
 
 ## Development
 
