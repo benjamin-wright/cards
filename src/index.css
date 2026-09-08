@@ -719,3 +719,184 @@ button:disabled {
   font-weight: 700;
   color: var(--text-strong);
 }
+
+/* ─── Rummy ─────────────────────────────────────────────────── */
+.view-rummy {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+  padding: 40px 16px;
+}
+
+/* The table deliberately ignores the orientation media queries the blackjack
+   table uses. The page is pinned to portrait and each seat is turned a quarter
+   turn to face its own player, so angling the device towards someone changes
+   only the tilt reading and never re-flows the layout mid-turn. */
+.view-rummy--table {
+  align-items: stretch;
+  padding: 0;
+  gap: 0;
+  min-height: 0;
+}
+
+.rummy-table {
+  flex: 1;
+  display: grid;
+  grid-template-rows: 1fr auto 1fr;
+  width: 100%;
+  min-height: 0;
+}
+
+.seat-slot {
+  position: relative;
+  overflow: hidden;
+  min-height: 0;
+}
+
+/* A rotated element keeps its original box, so the rotor is given the slot's
+   dimensions swapped over (in JS, from a ResizeObserver) before it turns. */
+.seat-rotor {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px;
+}
+
+.rummy-centre {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 6px 10px;
+  background: rgba(0, 0, 0, 0.18);
+}
+
+.rummy-centre .btn-ghost,
+.rummy-centre .btn-secondary {
+  padding: 4px 10px;
+  font-size: 0.75rem;
+}
+
+.view-rummy .seat-panel {
+  width: 100%;
+  max-width: none;
+  gap: 8px;
+  padding: 10px 14px;
+}
+
+.seat-panel--active {
+  border-left-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-border), var(--card-shadow);
+}
+
+.seat-panel-score {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--accent);
+  white-space: nowrap;
+}
+
+.seat-panel-result {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text-strong);
+  text-align: center;
+}
+
+/* Melds are formed automatically, so each group is boxed and labelled with
+   the deadwood left over at the end. */
+.grouped-hand {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+}
+
+.meld {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 6px;
+  border: 1px dashed var(--accent-border);
+  border-radius: var(--radius);
+  background: var(--accent-bg);
+}
+
+.meld--deadwood {
+  border-style: solid;
+  border-color: var(--border);
+  background: var(--surface-raised);
+}
+
+.meld-label {
+  font-size: 0.62rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+}
+
+.view-rummy .hand {
+  gap: 4px;
+}
+
+.view-rummy .seat-panel .hand-card {
+  width: 40px;
+}
+
+button.hand-card {
+  padding: 0;
+  transition: transform 0.12s, box-shadow 0.12s;
+}
+
+button.hand-card:not(:disabled):hover {
+  transform: translateY(-4px);
+}
+
+.hand-card--selected {
+  outline: 3px solid var(--accent);
+  outline-offset: 1px;
+  transform: translateY(-6px);
+}
+
+.hand-card--drawn {
+  box-shadow: 0 0 0 2px var(--red);
+}
+
+.hand-card--empty {
+  background: transparent;
+  border-style: dashed;
+  box-shadow: none;
+}
+
+.piles {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.pile {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.pile .hand-card {
+  width: 34px;
+}
+
+.pile-label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: rgba(255, 255, 255, 0.85);
+}

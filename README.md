@@ -24,6 +24,50 @@ twists below 15 and sticks on 15 or more. Beat the house to double your bet,
 lose it if the house wins, or get it back on a draw. Every hand ends with all
 cards revealed and a summary of winnings, losses and new totals.
 
+### Rummy
+
+Gin rummy for the same two players, with no betting. Ten cards are dealt to
+each player, one card starts the discard pile and the rest becomes the stock.
+On your turn you draw from the stock or take the face-up discard (which can't
+be thrown straight back), then discard a card. Sets and runs are formed
+automatically and shown grouped, with the left-over deadwood counted for you,
+so all you have to do is tap the card you want to throw.
+
+Knock by discarding when your deadwood is 10 or less, or go gin with none at
+all. If you miss it, the knock button stays on your panel until the next card
+is drawn, so either player can still knock on the hand they're holding while
+the device is tipped their way. The defender's deadwood is laid off onto the knocker's melds
+automatically, then the knocker scores the difference — unless the defender
+matches or beats it, which is an undercut worth the difference plus 25. Gin is
+worth the defender's whole hand plus 25, and the hand is abandoned as a draw if
+the stock runs down to two cards. First to 100 points wins the game.
+
+Hands are dealt face down so neither player can read the other's cards. The
+table is laid out for a device lying flat between the two players, with the
+piles across the middle and each player's panel turned a quarter turn to face
+their own side — one player sits to the left of the device, the other to the
+right.
+
+The page is deliberately pinned to portrait, and the "Tilt setup" button asks
+for that lock (plus tilt access, where the browser requires permission). With
+the page locked, angling the device towards a player only changes the tilt
+reading, so the browser never spins the layout around mid-turn:
+
+- **Flat, or held level** — the device belongs to nobody and both hands stay
+  face down.
+- **Angled towards the left-hand player** — only their hand is shown.
+- **Angled towards the right-hand player** — only their hand is shown.
+
+The hand appears past 35° and hides again below 20°, leaving a dead band so a
+wobbling hand doesn't flicker the cards open and shut. Because each panel is
+already turned to face its owner, the turn prompt, result and "Next hand"
+button all live inside the panels rather than in the middle strip.
+
+Where tilt isn't available — no sensor, or permission refused — each seat falls
+back to its own "Show cards" / "Hide cards" toggle, and cards go back face down
+as soon as the turn passes on. Reveals are never stored, so a refresh always
+comes back with hands face down.
+
 ## Development
 
 ```bash
