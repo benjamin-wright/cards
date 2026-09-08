@@ -32,23 +32,21 @@ function isBlackjackState(value: unknown): value is BlackjackState {
   return typeof value === 'object' && value !== null && (state.round === null || isRound(state.round))
 }
 
-function Screen({
-  onExit,
-  table = false,
-  children,
-}: {
-  onExit: () => void
-  table?: boolean
-  children: ReactNode
-}) {
+function GameBar({ onExit }: { onExit: () => void }) {
   return (
-    <main className={`view-blackjack${table ? ' view-blackjack--table' : ''}`}>
-      <div className="game-bar">
-        <span className="game-bar-title">Blackjack</span>
-        <button type="button" className="btn-ghost" onClick={onExit}>
-          Exit
-        </button>
-      </div>
+    <div className="game-bar">
+      <span className="game-bar-title">Blackjack</span>
+      <button type="button" className="btn-ghost" onClick={onExit}>
+        Exit
+      </button>
+    </div>
+  )
+}
+
+function Screen({ onExit, children }: { onExit: () => void; children: ReactNode }) {
+  return (
+    <main className="view-blackjack">
+      <GameBar onExit={onExit} />
       {children}
     </main>
   )
@@ -191,9 +189,36 @@ export default function Blackjack({ players, onSettle, onExit }: BlackjackProps)
   // Both seats play simultaneously: the house waits until both have stood or
   // gone bust, then it plays itself out. The same table layout is reused for
   // the summary so revealing the house doesn't jump to a different screen.
+  // The game bar and house are grouped in `.table-side` so a landscape layout
+  // can dedicate one full-height column to just the two seat panels.
   return (
-    <Screen onExit={onExit} table>
+    <main className="view-blackjack view-blackjack--table">
       <div className="table">
+        <div className="table-side">
+          <GameBar onExit={onExit} />
+
+          <div className="house-area">
+            <h2>House{round.phase === 'summary' ? ` — ${handScore(round.house)}` : ''}</h2>
+            <Hand cards={round.house} faceDown={round.phase === 'player'} />
+            {round.phase === 'house' && (
+              <button type="button" className="btn-primary" onClick={revealHouse}>
+                Reveal the house
+              </button>
+            )}
+            {round.phase === 'player' && <p className="hint">Waiting for both players to finish</p>}
+            {round.phase === 'summary' && (
+              <div className="panel-actions">
+                <button type="button" className="btn-primary" onClick={() => setState(deal(players))}>
+                  Play another hand
+                </button>
+                <button type="button" className="btn-secondary" onClick={onExit}>
+                  Back to games
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+
         <div className="seat-area seat-area--top">
           <SeatPanel
             seat={top}
@@ -203,27 +228,6 @@ export default function Blackjack({ players, onSettle, onExit }: BlackjackProps)
             onStick={() => setRound(stick(round, top.playerId))}
             onRaise={amount => setRound(raiseBet(round, top.playerId, amount))}
           />
-        </div>
-
-        <div className="house-area">
-          <h2>House{round.phase === 'summary' ? ` — ${handScore(round.house)}` : ''}</h2>
-          <Hand cards={round.house} faceDown={round.phase === 'player'} />
-          {round.phase === 'house' && (
-            <button type="button" className="btn-primary" onClick={revealHouse}>
-              Reveal the house
-            </button>
-          )}
-          {round.phase === 'player' && <p className="hint">Waiting for both players to finish</p>}
-          {round.phase === 'summary' && (
-            <div className="panel-actions">
-              <button type="button" className="btn-primary" onClick={() => setState(deal(players))}>
-                Play another hand
-              </button>
-              <button type="button" className="btn-secondary" onClick={onExit}>
-                Back to games
-              </button>
-            </div>
-          )}
         </div>
 
         <div className="seat-area seat-area--bottom">
@@ -237,6 +241,6 @@ export default function Blackjack({ players, onSettle, onExit }: BlackjackProps)
           />
         </div>
       </div>
-    </Screen>
+    </main>
   )
 }

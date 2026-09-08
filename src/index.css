@@ -373,12 +373,25 @@ button:disabled {
 .table {
   flex: 1;
   width: 100%;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-template-areas: 'bar' 'top' 'house' 'bottom';
   align-items: center;
+  justify-items: center;
   gap: 12px;
   min-height: 0;
+}
+
+/* Groups the game bar with the house so a landscape layout can move both
+   into one side column, leaving the seat panels the full column height.
+   In portrait it's just a grouping wrapper — `display: contents` lets its
+   children (the bar and the house) take their own grid areas directly. */
+.table-side {
+  display: contents;
+}
+
+.game-bar {
+  grid-area: bar;
 }
 
 .seat-area {
@@ -388,7 +401,12 @@ button:disabled {
 }
 
 .seat-area--top {
+  grid-area: top;
   transform: rotate(180deg);
+}
+
+.seat-area--bottom {
+  grid-area: bottom;
 }
 
 .seat-panel {
@@ -449,6 +467,7 @@ button:disabled {
 }
 
 .house-area {
+  grid-area: house;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -468,31 +487,40 @@ button:disabled {
   color: rgba(255, 255, 255, 0.75);
 }
 
-/* On a landscape screen there's little spare height, so the house moves to
-   one side, and each seat panel splits into a row — raises on the left,
-   cards in the middle, twist/stick on the right — instead of stacking
-   everything vertically. */
+/* On a landscape screen there's little spare height, so the game bar and
+   house are grouped into one side column (`.table-side`, now a real flex
+   column instead of `display: contents`), leaving the other column's full
+   height for the two seat panels. Each seat panel also splits into a row —
+   raises on the left, cards in the middle, twist/stick on the right —
+   instead of stacking everything vertically. */
 @media (orientation: landscape) {
   .table {
-    display: grid;
     grid-template-columns: 1fr auto;
     grid-template-rows: 1fr 1fr;
-    grid-template-areas: 'top house' 'bottom house';
+    grid-template-areas: 'top side' 'bottom side';
+    align-items: stretch;
+    justify-items: stretch;
     gap: 10px;
   }
 
-  .seat-area--top {
-    grid-area: top;
+  .seat-area {
+    align-items: center;
   }
 
-  .seat-area--bottom {
-    grid-area: bottom;
+  .table-side {
+    display: flex;
+    flex-direction: column;
+    grid-area: side;
+    height: 100%;
+  }
+
+  .game-bar {
+    flex-shrink: 0;
   }
 
   .house-area {
-    grid-area: house;
-    align-self: center;
-    justify-self: center;
+    flex: 1;
+    justify-content: center;
     padding: 0 8px;
   }
 
