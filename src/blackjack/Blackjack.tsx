@@ -94,28 +94,36 @@ function SeatPanel({
 
   return (
     <section className={`seat-panel${result === null ? '' : ` seat-panel--${result.outcome}`}`}>
-      <header className="seat-panel-header">
-        <h2>{seat.name}</h2>
-        <span className="seat-panel-status">{seatMessage(seat, result)}</span>
-      </header>
+      <div className="seat-panel-row">
+        <div className="seat-panel-info">
+          <header className="seat-panel-header">
+            <h2>{seat.name}</h2>
+            <span className="seat-panel-status">{seatMessage(seat, result)}</span>
+          </header>
 
-      <Hand cards={seat.cards} faceDown={false} />
+          <Hand cards={seat.cards} faceDown={false} />
 
-      {result === null ? (
-        <>
-          <p className="hint">Bet £{seat.bet} of £{seat.cash}</p>
-
-          {raises.length > 0 && (
-            <div className="bet-actions">
-              <span className="bet-label">Raise:</span>
-              {raises.map(amount => (
-                <button key={amount} type="button" className="btn-secondary" onClick={() => onRaise(amount)}>
-                  +£{amount}
-                </button>
-              ))}
-            </div>
+          {result === null ? (
+            <p className="hint">Bet £{seat.bet} of £{seat.cash}</p>
+          ) : (
+            <p className="hint">
+              Bet £{result.bet} — Total £{result.cashAfter}
+            </p>
           )}
+        </div>
 
+        {result === null && raises.length > 0 && (
+          <div className="bet-actions">
+            <span className="bet-label">Raise:</span>
+            {raises.map(amount => (
+              <button key={amount} type="button" className="btn-secondary" onClick={() => onRaise(amount)}>
+                +£{amount}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {result === null && (
           <div className="panel-actions">
             <button type="button" className="btn-primary" disabled={!playable} onClick={onTwist}>
               Twist
@@ -124,12 +132,8 @@ function SeatPanel({
               Stick
             </button>
           </div>
-        </>
-      ) : (
-        <p className="hint">
-          Bet £{result.bet} — Total £{result.cashAfter}
-        </p>
-      )}
+        )}
+      </div>
     </section>
   )
 }

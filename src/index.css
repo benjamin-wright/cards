@@ -413,6 +413,22 @@ button:disabled {
   border-left-color: var(--red);
 }
 
+.seat-panel-row {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+}
+
+.seat-panel-info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+}
+
 .seat-panel-header {
   display: flex;
   align-items: baseline;
@@ -453,7 +469,9 @@ button:disabled {
 }
 
 /* On a landscape screen there's little spare height, so the house moves to
-   one side instead of taking a full row between the two player areas. */
+   one side, and each seat panel splits into a row — raises on the left,
+   cards in the middle, twist/stick on the right — instead of stacking
+   everything vertically. */
 @media (orientation: landscape) {
   .table {
     display: grid;
@@ -479,8 +497,35 @@ button:disabled {
   }
 
   .seat-panel {
+    max-width: none;
     gap: 6px;
     padding: 10px 16px;
+  }
+
+  .seat-panel-row {
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    gap: 14px;
+  }
+
+  .seat-panel-info {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .seat-panel-row .bet-actions {
+    order: -1;
+    flex-direction: column;
+    flex-wrap: nowrap;
+    flex-shrink: 0;
+  }
+
+  .seat-panel-row .panel-actions {
+    order: 1;
+    flex-direction: column;
+    flex-wrap: nowrap;
+    flex-shrink: 0;
   }
 
   .house-area .hand,
