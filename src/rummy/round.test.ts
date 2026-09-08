@@ -3,6 +3,7 @@ import type { Card, Rank, Suit } from '../cards'
 import type { Player } from '../players'
 import { HAND_SIZE } from './melds'
 import {
+  canKnockNow,
   canKnockWith,
   createRound,
   discard,
@@ -10,6 +11,7 @@ import {
   drawFromStock,
   isRound,
   knock,
+  knockNow,
   topOfDiscard,
   type Round,
 } from './round'
@@ -215,6 +217,61 @@ describe('knocking', () => {
     expect(next.result?.knockerId).toBe('a')
     // Ada is left with 9♣ (9), Bob with 2♣ (2), plus the 25 point bonus.
     expect(next.result?.points).toBe(9 - 2 + 25)
+  })
+})
+
+describe('knocking after the discard', () => {
+  const knocked = hand('AS', '2S', '3S', '8H', '8D', '8C', 'JD', 'QD', 'KD', '4C')
+  const defender = hand('5H', '6H', '7H', '9S', '9H', '9D', '2C', '3D', 'KC', 'QH')
+
+  function afterDiscard(overrides: Partial<Round> = {}): Round {
+    return staged({
+      phase: 'draw',
+      turn: 'b',
+      hands: [
+        { playerId: 'a', name: 'Ada', cards: knocked },
+        { playerId: 'b', name: 'Bob', cards: defender },
+      ],
+      ...overrides,
+    })
+  }
+
+  it('stays available to the player who has just discarded', () => {
+    const round = afterDiscard()
+
+    expect(canKnockNow(round, 'a')).toBe(true)
+    expect(knockNow(round, 'a').result?.points).toBe(25 - 4)
+  })
+
+  it('closes once the next card has been drawn', () => {
+    const round = drawFromStock(afterDiscard(), 'b')
+
+    expect(canKnockNow(round, 'a')).toBe(false)
+    expect(knockNow(round, 'a')).toBe(round)
+  })
+
+  it('is refused above the knock limit', () => {
+    expect(canKnockNow(afterDiscard(), 'b')).toBe(false)
+  })
+
+  it('is refused once the hand is over', () => {
+    const round = knockNow(afterDiscard(), 'a')
+
+    expect(canKnockNow(round, 'a')).toBe(false)
+  })
+
+  it('lets the defender undercut on their own turn', () => {
+    const round = afterDiscard({
+      turn: 'a',
+      hands: [
+        { playerId: 'a', name: 'Ada', cards: defender },
+        { playerId: 'b', name: 'Bob', cards: knocked },
+      ],
+    })
+    const next = knockNow(round, 'b')
+
+    expect(next.result?.kind).toBe('knock')
+    expect(next.result?.knockerId).toBe('b')
   })
 })
 

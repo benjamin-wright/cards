@@ -10,6 +10,7 @@ import RotatedSeat from '../views/RotatedSeat'
 import { KNOCK_LIMIT, bestLayout, type Layout, type Meld } from './melds'
 import {
   TARGET_SCORE,
+  canKnockNow,
   canKnockWith,
   createRound,
   discard,
@@ -17,6 +18,7 @@ import {
   drawFromStock,
   isRound,
   knock,
+  knockNow,
   opponentOf,
   topOfDiscard,
   type Hand,
@@ -208,6 +210,7 @@ function SeatPanel({
   onDrawDiscard,
   onDiscard,
   onKnock,
+  onKnockNow,
   onDeal,
   onNewGame,
   selected,
@@ -224,6 +227,7 @@ function SeatPanel({
   onDrawDiscard: () => void
   onDiscard: () => void
   onKnock: () => void
+  onKnockNow: () => void
   onDeal: () => void
   onNewGame: () => void
   selected: Card | null
@@ -239,6 +243,10 @@ function SeatPanel({
     knockable &&
     selected !== null &&
     bestLayout(hand.cards.filter(card => cardKey(card) !== cardKey(selected))).deadwoodValue === 0
+  // A knock is easy to miss while picking a discard, so it stays offered on
+  // the finished hand until the next card is drawn — including on the
+  // opponent's turn, since a tilted-away player can't reach the button.
+  const knockableNow = canKnockNow(round, hand.playerId)
 
   const status =
     result !== null
@@ -278,6 +286,12 @@ function SeatPanel({
           {canToggle && (
             <button type="button" className="btn-secondary" onClick={onToggle}>
               {visible ? 'Hide cards' : 'Show cards'}
+            </button>
+          )}
+
+          {visible && knockableNow && (
+            <button type="button" className="btn-secondary" onClick={onKnockNow}>
+              {layout.deadwoodValue === 0 ? 'Gin' : `Knock on ${layout.deadwoodValue}`}
             </button>
           )}
 
@@ -465,6 +479,7 @@ export default function Rummy({ players, onExit }: RummyProps) {
       onDrawDiscard={() => act(drawFromDiscard(round, hand.playerId))}
       onDiscard={() => selected !== null && act(discard(round, hand.playerId, selected))}
       onKnock={() => selected !== null && act(knock(round, hand.playerId, selected))}
+      onKnockNow={() => act(knockNow(round, hand.playerId))}
       onDeal={deal}
       onNewGame={newGame}
       selected={round.turn === hand.playerId ? selected : null}

@@ -254,27 +254,13 @@ function abandonRound(round: Round): Round {
 }
 
 /**
- * Discards a card and knocks. Gin scores a bonus on the defender's whole hand,
- * otherwise the defender lays their deadwood off onto the knocker's melds and
- * an equal or lower count undercuts the knock.
+ * Scores a knock against the hands as they stand. Gin scores a bonus on the
+ * defender's whole hand, otherwise the defender lays their deadwood off onto
+ * the knocker's melds and an equal or lower count undercuts the knock.
  */
-export function knock(round: Round, playerId: string, card: Card): Round {
-  const hand = handFor(round, playerId)
-  if (!canKnockWith(round, playerId, card) || hand === undefined) {
-    return round
-  }
-
-  const knocked: Round = {
-    ...withHand(round, playerId, removeCard(hand.cards, card)),
-    discard: [...round.discard, card],
-    phase: 'summary',
-    drawn: null,
-    blockedDiscard: null,
-  }
-
-  const knocker = scoreHand(handFor(knocked, playerId)!)
-  const defenderHand = opponentOf(knocked, playerId)
-  let defender = scoreHand(defenderHand)
+function settleKnock(round: Round, playerId: string): Round {
+  const knocker = scoreHand(handFor(round, playerId)!)
+  let defender = scoreHand(opponentOf(round, playerId))
 
   const gin = knocker.deadwoodValue === 0
 
@@ -310,5 +296,43 @@ export function knock(round: Round, playerId: string, card: Card): Round {
           hands: [knocker, defender],
         }
 
-  return { ...knocked, result }
+  return { ...round, phase: 'summary', drawn: null, blockedDiscard: null, result }
+}
+
+/** Discards a card and knocks in the same move. */
+export function knock(round: Round, playerId: string, card: Card): Round {
+  const hand = handFor(round, playerId)
+  if (!canKnockWith(round, playerId, card) || hand === undefined) {
+    return round
+  }
+
+  const knocked: Round = {
+    ...withHand(round, playerId, removeCard(hand.cards, card)),
+    discard: [...round.discard, card],
+  }
+
+  return settleKnock(knocked, playerId)
+}
+
+/**
+ * A knock is easy to miss in the moment, so it stays available for the rest of
+ * the turn you discarded on: while nobody is part-way through a turn, either
+ * player can knock on the hand they're holding. The window closes as soon as
+ * the next card is drawn, which also keeps both hands at ten cards so the
+ * deadwood is scored fairly.
+ */
+export function canKnockNow(round: Round, playerId: string): boolean {
+  const hand = handFor(round, playerId)
+  return (
+    round.result === null &&
+    round.phase === 'draw' &&
+    hand !== undefined &&
+    hand.cards.length === HAND_SIZE &&
+    canKnock(hand.cards)
+  )
+}
+
+/** Knocks on the hand as it stands, without discarding. */
+export function knockNow(round: Round, playerId: string): Round {
+  return canKnockNow(round, playerId) ? settleKnock(round, playerId) : round
 }

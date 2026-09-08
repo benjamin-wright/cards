@@ -34,7 +34,9 @@ automatically and shown grouped, with the left-over deadwood counted for you,
 so all you have to do is tap the card you want to throw.
 
 Knock by discarding when your deadwood is 10 or less, or go gin with none at
-all. The defender's deadwood is laid off onto the knocker's melds
+all. If you miss it, the knock button stays on your panel until the next card
+is drawn, so either player can still knock on the hand they're holding while
+the device is tipped their way. The defender's deadwood is laid off onto the knocker's melds
 automatically, then the knocker scores the difference — unless the defender
 matches or beats it, which is an undercut worth the difference plus 25. Gin is
 worth the defender's whole hand plus 25, and the hand is abandoned as a draw if
