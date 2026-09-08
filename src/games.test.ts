@@ -20,14 +20,13 @@ describe('games', () => {
     }
   })
 
-  it('offers blackjack for two to four players', () => {
+  it('offers blackjack for exactly two players', () => {
     const blackjack = games.find(game => game.id === 'blackjack')!
     expect(blackjack.available).toBe(true)
-    expect(playerCountLabel(blackjack)).toBe('2-4 players')
+    expect(playerCountLabel(blackjack)).toBe('2 players')
     expect(isPlayable(blackjack, 1)).toBe(false)
     expect(isPlayable(blackjack, 2)).toBe(true)
-    expect(isPlayable(blackjack, 4)).toBe(true)
-    expect(isPlayable(blackjack, 5)).toBe(false)
+    expect(isPlayable(blackjack, 3)).toBe(false)
   })
 
   it('never marks unavailable games as playable', () => {

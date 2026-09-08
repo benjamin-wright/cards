@@ -15,9 +15,9 @@ import {
   shuffle,
 } from './engine'
 
-export type SeatStatus = 'waiting' | 'playing' | 'stood' | 'bust'
+export type SeatStatus = 'playing' | 'stood' | 'bust'
 
-const SEAT_STATUSES: SeatStatus[] = ['waiting', 'playing', 'stood', 'bust']
+const SEAT_STATUSES: SeatStatus[] = ['playing', 'stood', 'bust']
 
 export type Seat = {
   playerId: string
@@ -46,11 +46,14 @@ export type RoundPhase = 'player' | 'house' | 'summary'
 
 const ROUND_PHASES: RoundPhase[] = ['player', 'house', 'summary']
 
+/**
+ * Both seats play at once — there's no turn order, just each seat's own
+ * progress towards standing or going bust.
+ */
 export type Round = {
   deck: Card[]
   seats: Seat[]
   house: Card[]
-  activeIndex: number
   phase: RoundPhase
   results: Result[] | null
 }
@@ -91,7 +94,6 @@ export function isRound(value: unknown): value is Round {
     Array.isArray(round.seats) &&
     round.seats.length > 0 &&
     round.seats.every(isSeat) &&
-    typeof round.activeIndex === 'number' &&
     ROUND_PHASES.includes(round.phase!) &&
     (round.results === null || Array.isArray(round.results))
   )
@@ -104,7 +106,7 @@ export function canAnte(player: Player): boolean {
 
 /**
  * Deals a fresh hand: two cards each in player order, with the house dealt
- * last.
+ * last. Both seats start able to play at the same time.
  */
 export function createRound(players: Player[], rng: Rng = Math.random): Round {
   const deck = shuffle(createDeck(), rng)
@@ -116,7 +118,7 @@ export function createRound(players: Player[], rng: Rng = Math.random): Round {
     cards: [],
     bet: ANTE,
     betLocked: false,
-    status: 'waiting' as SeatStatus,
+    status: 'playing' as SeatStatus,
   }))
 
   const house: Card[] = []
@@ -127,86 +129,72 @@ export function createRound(players: Player[], rng: Rng = Math.random): Round {
     house.push(deck.shift()!)
   }
 
-  const round: Round = {
+  return {
     deck,
     seats,
     house,
-    activeIndex: 0,
     phase: 'player',
     results: null,
   }
-
-  return startSeat(round)
 }
 
-function startSeat(round: Round): Round {
-  if (round.activeIndex >= round.seats.length) {
-    return round
-  }
-
-  const seats = round.seats.map((seat, index) =>
-    index === round.activeIndex ? { ...seat, status: 'playing' as SeatStatus } : seat,
-  )
+function updateSeat(round: Round, playerId: string, update: (seat: Seat) => Seat): Round {
+  const seats = round.seats.map(seat => (seat.playerId === playerId ? update(seat) : seat))
   return { ...round, seats }
 }
 
-function advance(round: Round): Round {
-  const activeIndex = round.activeIndex + 1
-  if (activeIndex >= round.seats.length) {
-    return { ...round, activeIndex, phase: 'house' }
+/** Hands over to the house once every seat has stood or gone bust. */
+function afterAction(round: Round): Round {
+  if (round.phase === 'player' && round.seats.every(seat => seat.status !== 'playing')) {
+    return { ...round, phase: 'house' }
   }
-  return startSeat({ ...round, activeIndex })
-}
-
-function updateActiveSeat(round: Round, update: (seat: Seat) => Seat): Round {
-  const seats = round.seats.map((seat, index) => (index === round.activeIndex ? update(seat) : seat))
-  return { ...round, seats }
+  return round
 }
 
 /**
- * Increases the active player's bet. Raises can be stacked to reach any
- * amount, up until the player takes another card.
+ * Increases a seat's bet. Raises can be stacked to reach any amount, up
+ * until that seat takes another card.
  */
-export function raiseBet(round: Round, amount: number): Round {
-  const seat = round.seats[round.activeIndex]
-  if (round.phase !== 'player' || !seat || seat.betLocked || seat.bet + amount > seat.cash) {
+export function raiseBet(round: Round, playerId: string, amount: number): Round {
+  const seat = round.seats.find(entry => entry.playerId === playerId)
+  if (round.phase !== 'player' || !seat || seat.status !== 'playing' || seat.betLocked || seat.bet + amount > seat.cash) {
     return round
   }
-  return updateActiveSeat(round, current => ({ ...current, bet: current.bet + amount }))
+  return updateSeat(round, playerId, current => ({ ...current, bet: current.bet + amount }))
 }
 
-/** Deals the active player another card, ending their turn if they go bust. */
-export function twist(round: Round): Round {
-  const seat = round.seats[round.activeIndex]
-  if (round.phase !== 'player' || !seat || round.deck.length === 0) {
+/** Deals a seat another card, ending their turn if they go bust. */
+export function twist(round: Round, playerId: string): Round {
+  const seat = round.seats.find(entry => entry.playerId === playerId)
+  if (round.phase !== 'player' || !seat || seat.status !== 'playing' || round.deck.length === 0) {
     return round
   }
 
   const [card, ...deck] = round.deck
   const cards = [...seat.cards, card]
   const bust = isBust(cards)
-  const next = updateActiveSeat({ ...round, deck }, current => ({
+  const next = updateSeat({ ...round, deck }, playerId, current => ({
     ...current,
     cards,
     betLocked: true,
     status: bust ? 'bust' : 'playing',
   }))
 
-  return bust ? advance(next) : next
+  return afterAction(next)
 }
 
-/** Ends the active player's turn, keeping their current hand. */
-export function stick(round: Round): Round {
-  const seat = round.seats[round.activeIndex]
-  if (round.phase !== 'player' || !seat) {
+/** Ends a seat's turn, keeping their current hand. */
+export function stick(round: Round, playerId: string): Round {
+  const seat = round.seats.find(entry => entry.playerId === playerId)
+  if (round.phase !== 'player' || !seat || seat.status !== 'playing') {
     return round
   }
 
-  const next = updateActiveSeat(round, current => ({ ...current, status: 'stood' as SeatStatus }))
-  return advance(next)
+  const next = updateSeat(round, playerId, current => ({ ...current, status: 'stood' as SeatStatus }))
+  return afterAction(next)
 }
 
-/** Plays the house hand out and settles every player against it. */
+/** Plays the house hand out and settles every seat against it. */
 export function finishRound(round: Round): Round {
   if (round.phase !== 'house') {
     return round
