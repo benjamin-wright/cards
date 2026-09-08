@@ -40,15 +40,11 @@ describe('createRound', () => {
     expect(round.seats[1].status).toBe('waiting')
   })
 
-  it('keeps every player exactly once and varies the order', () => {
-    const orders = new Set<string>()
+  it('seats players in the order they were entered', () => {
     for (let seed = 1; seed <= 20; seed += 1) {
       const round = createRound(players, seeded(seed))
-      const ids = round.seats.map(seat => seat.playerId)
-      expect([...ids].sort()).toEqual(['a', 'b', 'c'])
-      orders.add(ids.join(','))
+      expect(round.seats.map(seat => seat.playerId)).toEqual(['a', 'b', 'c'])
     }
-    expect(orders.size).toBeGreaterThan(1)
   })
 
   it('never deals the same card twice', () => {

@@ -54,14 +54,13 @@ export function canAnte(player: Player): boolean {
 }
 
 /**
- * Deals a fresh hand: two cards each in a randomised seat order, with the
- * house dealt last.
+ * Deals a fresh hand: two cards each in player order, with the house dealt
+ * last.
  */
 export function createRound(players: Player[], rng: Rng = Math.random): Round {
   const deck = shuffle(createDeck(), rng)
-  const order = shuffle(players, rng)
 
-  const seats: Seat[] = order.map(player => ({
+  const seats: Seat[] = players.map(player => ({
     playerId: player.id,
     name: player.name,
     cash: player.cash,
