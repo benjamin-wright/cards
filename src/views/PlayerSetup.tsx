@@ -1,5 +1,13 @@
 import { useState } from 'react'
-import { MAX_PLAYERS, MIN_PLAYERS, STARTING_CASH, createPlayer, displayName, type Player } from '../players'
+import {
+  MAX_PLAYERS,
+  MIN_PLAYERS,
+  STARTING_CASH,
+  createPlayer,
+  displayName,
+  resetCash,
+  type Player,
+} from '../players'
 
 type PlayerSetupProps = {
   players: Player[]
@@ -21,6 +29,10 @@ export default function PlayerSetup({ players, onConfirm }: PlayerSetupProps) {
 
   const removePlayer = (id: string) => {
     setDraft(current => (current.length <= MIN_PLAYERS ? current : current.filter(player => player.id !== id)))
+  }
+
+  const resetTotals = () => {
+    setDraft(current => resetCash(current))
   }
 
   const submit = (event: React.FormEvent) => {
@@ -50,6 +62,7 @@ export default function PlayerSetup({ players, onConfirm }: PlayerSetupProps) {
                 placeholder={`Player ${index + 1}`}
                 onChange={event => rename(player.id, event.target.value)}
               />
+              <span className="player-row-cash">£{player.cash}</span>
               <button
                 type="button"
                 className="btn-ghost"
@@ -71,6 +84,14 @@ export default function PlayerSetup({ players, onConfirm }: PlayerSetupProps) {
             disabled={draft.length >= MAX_PLAYERS}
           >
             Add player
+          </button>
+          <button
+            type="button"
+            className="btn-secondary"
+            onClick={resetTotals}
+            disabled={draft.every(player => player.cash === STARTING_CASH)}
+          >
+            Reset cash
           </button>
           <button type="submit" className="btn-primary">
             Continue

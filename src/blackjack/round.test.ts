@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { Player } from '../players'
 import { ANTE } from './engine'
-import { canAnte, createRound, finishRound, raiseBet, stick, twist } from './round'
+import { canAnte, createRound, finishRound, isRound, raiseBet, stick, twist } from './round'
 
 const players: Player[] = [
   { id: 'a', name: 'Ada', cash: 100 },
@@ -26,7 +26,7 @@ describe('createRound', () => {
     for (const seat of round.seats) {
       expect(seat.cards).toHaveLength(2)
       expect(seat.bet).toBe(ANTE)
-      expect(seat.raised).toBe(false)
+      expect(seat.betLocked).toBe(false)
     }
     expect(round.house).toHaveLength(2)
     expect(round.deck).toHaveLength(52 - 8)
@@ -55,14 +55,24 @@ describe('createRound', () => {
 })
 
 describe('raiseBet', () => {
-  it('increases the bet once only', () => {
-    const round = createRound(players, seeded(4))
-    const raised = raiseBet(round, 10)
-    expect(raised.seats[0].bet).toBe(ANTE + 10)
-    expect(raised.seats[0].raised).toBe(true)
+  it('stacks raises to reach any amount', () => {
+    let round = createRound(players, seeded(4))
+    round = raiseBet(round, 10)
+    expect(round.seats[0].bet).toBe(ANTE + 10)
 
-    const again = raiseBet(raised, 10)
-    expect(again.seats[0].bet).toBe(ANTE + 10)
+    round = raiseBet(raiseBet(round, 10), 1)
+    expect(round.seats[0].bet).toBe(ANTE + 21)
+    expect(round.seats[0].betLocked).toBe(false)
+  })
+
+  it('stops raising at the player\'s available cash', () => {
+    let round = createRound(players, seeded(4))
+    for (let i = 0; i < 12; i += 1) {
+      round = raiseBet(round, 10)
+    }
+    expect(round.seats[0].bet).toBe(91)
+    expect(raiseBet(round, 10).seats[0].bet).toBe(91)
+    expect(raiseBet(round, 1).seats[0].bet).toBe(92)
   })
 
   it('refuses raises the player cannot cover', () => {
@@ -72,6 +82,7 @@ describe('raiseBet', () => {
 
   it('is not allowed after twisting', () => {
     const round = twist(createRound(players, seeded(6)))
+    expect(round.seats[0].betLocked).toBe(true)
     if (round.phase === 'player') {
       expect(raiseBet(round, 1).seats[0].bet).toBe(ANTE)
     }
@@ -140,5 +151,27 @@ describe('canAnte', () => {
   it('requires the entry fee', () => {
     expect(canAnte({ id: 'a', name: 'Ada', cash: 1 })).toBe(true)
     expect(canAnte({ id: 'a', name: 'Ada', cash: 0 })).toBe(false)
+  })
+})
+
+describe('isRound', () => {
+  it('accepts a round that has been through storage', () => {
+    let round = createRound(players, seeded(14))
+    round = raiseBet(twist(stick(round)), 10)
+    expect(isRound(JSON.parse(JSON.stringify(round)))).toBe(true)
+
+    const settled = finishRound(stick(stick(round)))
+    expect(isRound(JSON.parse(JSON.stringify(settled)))).toBe(true)
+  })
+
+  it('rejects anything else', () => {
+    const round = createRound(players, seeded(15))
+    expect(isRound(undefined)).toBe(false)
+    expect(isRound({})).toBe(false)
+    expect(isRound({ ...round, phase: 'nonsense' })).toBe(false)
+    expect(isRound({ ...round, seats: [] })).toBe(false)
+    expect(isRound({ ...round, deck: [{ rank: 'Z', suit: 'spades' }] })).toBe(false)
+    expect(isRound({ ...round, house: [{ rank: 'A', suit: 'swords' }] })).toBe(false)
+    expect(isRound({ ...round, seats: [{ ...round.seats[0], betLocked: 'yes' }] })).toBe(false)
   })
 })

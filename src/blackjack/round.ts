@@ -1,6 +1,8 @@
 import type { Player } from '../players'
 import {
   ANTE,
+  RANKS,
+  SUITS,
   type Card,
   type Outcome,
   type Rng,
@@ -15,6 +17,8 @@ import {
 
 export type SeatStatus = 'waiting' | 'playing' | 'stood' | 'bust'
 
+const SEAT_STATUSES: SeatStatus[] = ['waiting', 'playing', 'stood', 'bust']
+
 export type Seat = {
   playerId: string
   name: string
@@ -22,7 +26,8 @@ export type Seat = {
   cash: number
   cards: Card[]
   bet: number
-  raised: boolean
+  /** Betting closes for a seat once they take another card. */
+  betLocked: boolean
   status: SeatStatus
 }
 
@@ -39,6 +44,8 @@ export type Result = {
 
 export type RoundPhase = 'player' | 'house' | 'summary'
 
+const ROUND_PHASES: RoundPhase[] = ['player', 'house', 'summary']
+
 export type Round = {
   deck: Card[]
   seats: Seat[]
@@ -46,6 +53,48 @@ export type Round = {
   activeIndex: number
   phase: RoundPhase
   results: Result[] | null
+}
+
+function isCardList(value: unknown): value is Card[] {
+  return (
+    Array.isArray(value) &&
+    value.every(entry => {
+      const card = entry as Partial<Card>
+      return typeof entry === 'object' && entry !== null && RANKS.includes(card.rank!) && SUITS.includes(card.suit!)
+    })
+  )
+}
+
+function isSeat(value: unknown): value is Seat {
+  const seat = value as Partial<Seat>
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    typeof seat.playerId === 'string' &&
+    typeof seat.name === 'string' &&
+    typeof seat.cash === 'number' &&
+    typeof seat.bet === 'number' &&
+    typeof seat.betLocked === 'boolean' &&
+    SEAT_STATUSES.includes(seat.status!) &&
+    isCardList(seat.cards)
+  )
+}
+
+/** Guards a round restored from storage, so bad data starts a fresh hand. */
+export function isRound(value: unknown): value is Round {
+  const round = value as Partial<Round>
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    isCardList(round.deck) &&
+    isCardList(round.house) &&
+    Array.isArray(round.seats) &&
+    round.seats.length > 0 &&
+    round.seats.every(isSeat) &&
+    typeof round.activeIndex === 'number' &&
+    ROUND_PHASES.includes(round.phase!) &&
+    (round.results === null || Array.isArray(round.results))
+  )
 }
 
 /** Players need at least the ante to join a hand. */
@@ -66,7 +115,7 @@ export function createRound(players: Player[], rng: Rng = Math.random): Round {
     cash: player.cash,
     cards: [],
     bet: ANTE,
-    raised: false,
+    betLocked: false,
     status: 'waiting' as SeatStatus,
   }))
 
@@ -114,13 +163,16 @@ function updateActiveSeat(round: Round, update: (seat: Seat) => Seat): Round {
   return { ...round, seats }
 }
 
-/** Increases the active player's bet. Each player may only raise once. */
+/**
+ * Increases the active player's bet. Raises can be stacked to reach any
+ * amount, up until the player takes another card.
+ */
 export function raiseBet(round: Round, amount: number): Round {
   const seat = round.seats[round.activeIndex]
-  if (round.phase !== 'player' || !seat || seat.raised || seat.bet + amount > seat.cash) {
+  if (round.phase !== 'player' || !seat || seat.betLocked || seat.bet + amount > seat.cash) {
     return round
   }
-  return updateActiveSeat(round, current => ({ ...current, bet: current.bet + amount, raised: true }))
+  return updateActiveSeat(round, current => ({ ...current, bet: current.bet + amount }))
 }
 
 /** Deals the active player another card, ending their turn if they go bust. */
@@ -136,7 +188,7 @@ export function twist(round: Round): Round {
   const next = updateActiveSeat({ ...round, deck }, current => ({
     ...current,
     cards,
-    raised: true,
+    betLocked: true,
     status: bust ? 'bust' : 'playing',
   }))
 
