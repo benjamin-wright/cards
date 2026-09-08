@@ -401,7 +401,16 @@ button:disabled {
   padding: 14px 20px;
   background: var(--surface);
   border-radius: var(--radius-lg);
+  border-left: 6px solid transparent;
   box-shadow: var(--card-shadow);
+}
+
+.seat-panel--win {
+  border-left-color: var(--accent);
+}
+
+.seat-panel--lose {
+  border-left-color: var(--red);
 }
 
 .seat-panel-header {
@@ -441,6 +450,48 @@ button:disabled {
 
 .house-area .hint {
   color: rgba(255, 255, 255, 0.75);
+}
+
+/* On a landscape screen there's little spare height, so the house moves to
+   one side instead of taking a full row between the two player areas. */
+@media (orientation: landscape) {
+  .table {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    grid-template-rows: 1fr 1fr;
+    grid-template-areas: 'top house' 'bottom house';
+    gap: 10px;
+  }
+
+  .seat-area--top {
+    grid-area: top;
+  }
+
+  .seat-area--bottom {
+    grid-area: bottom;
+  }
+
+  .house-area {
+    grid-area: house;
+    align-self: center;
+    justify-self: center;
+    padding: 0 8px;
+  }
+
+  .seat-panel {
+    gap: 6px;
+    padding: 10px 16px;
+  }
+
+  .house-area .hand,
+  .seat-panel .hand {
+    gap: 4px;
+  }
+
+  .house-area .hand-card,
+  .seat-panel .hand-card {
+    width: 40px;
+  }
 }
 
 .player-list {
@@ -551,66 +602,6 @@ button:disabled {
 
 .hand-card-suit {
   font-size: 1.2rem;
-}
-
-/* ─── Results ────────────────────────────────────────────────── */
-.results {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  width: 100%;
-  max-width: 520px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.result {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  padding: 14px;
-  border-radius: var(--radius-lg);
-  background: var(--surface);
-  border-left: 6px solid var(--border);
-  box-shadow: var(--shadow);
-}
-
-.result--win {
-  border-left-color: var(--accent);
-}
-
-.result--lose {
-  border-left-color: var(--red);
-}
-
-.result-head,
-.result-money {
-  display: flex;
-  justify-content: space-between;
-  gap: 10px;
-  align-items: baseline;
-}
-
-.result-name {
-  font-weight: 700;
-  color: var(--text-strong);
-}
-
-.result-score {
-  font-weight: 700;
-  font-size: 1.2rem;
-  color: var(--text-strong);
-}
-
-.result-money {
-  font-size: 0.85rem;
-  color: var(--text);
-}
-
-.result-outcome,
-.result-total {
-  font-weight: 700;
 }
 
 .bet-actions {
