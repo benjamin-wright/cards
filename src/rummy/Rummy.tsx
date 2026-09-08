@@ -3,9 +3,10 @@ import type { Card } from '../cards'
 import { cardKey } from '../cards'
 import { SUIT_SYMBOLS } from '../games'
 import type { Player } from '../players'
-import { nearSeat, useDeviceView } from '../orientation'
+import { useDeviceView } from '../orientation'
 import { STORAGE_KEYS, usePersistentState } from '../storage'
 import CardFace from '../views/CardFace'
+import RotatedSeat from '../views/RotatedSeat'
 import { KNOCK_LIMIT, bestLayout, type Layout, type Meld } from './melds'
 import {
   TARGET_SCORE,
@@ -201,11 +202,14 @@ function SeatPanel({
   round,
   visible,
   canToggle,
+  matchWinnerName,
   onToggle,
   onDrawStock,
   onDrawDiscard,
   onDiscard,
   onKnock,
+  onDeal,
+  onNewGame,
   selected,
   onSelect,
 }: {
@@ -214,11 +218,14 @@ function SeatPanel({
   round: Round
   visible: boolean
   canToggle: boolean
+  matchWinnerName: string | null
   onToggle: () => void
   onDrawStock: () => void
   onDrawDiscard: () => void
   onDiscard: () => void
   onKnock: () => void
+  onDeal: () => void
+  onNewGame: () => void
   selected: Card | null
   onSelect: (card: Card) => void
 }) {
@@ -228,7 +235,10 @@ function SeatPanel({
   const scored = result?.hands.find(entry => entry.playerId === hand.playerId) ?? null
   const top = topOfDiscard(round)
   const knockable = selected !== null && canKnockWith(round, hand.playerId, selected)
-  const gin = knockable && selected !== null && bestLayout(hand.cards.filter(card => cardKey(card) !== cardKey(selected))).deadwoodValue === 0
+  const gin =
+    knockable &&
+    selected !== null &&
+    bestLayout(hand.cards.filter(card => cardKey(card) !== cardKey(selected))).deadwoodValue === 0
 
   const status =
     result !== null
@@ -261,7 +271,9 @@ function SeatPanel({
         <HiddenHand count={hand.cards.length} />
       )}
 
-      {result === null && (
+      {/* Each player's own copy of the table state, turned to face them, so
+          nobody has to read anything sideways. */}
+      {result === null ? (
         <div className="panel-actions">
           {canToggle && (
             <button type="button" className="btn-secondary" onClick={onToggle}>
@@ -296,10 +308,28 @@ function SeatPanel({
             </>
           )}
         </div>
+      ) : (
+        <div className="panel-actions">
+          {matchWinnerName === null ? (
+            <button type="button" className="btn-primary" onClick={onDeal}>
+              Next hand
+            </button>
+          ) : (
+            <button type="button" className="btn-primary" onClick={onNewGame}>
+              New game
+            </button>
+          )}
+        </div>
       )}
 
+      {result !== null && <p className="seat-panel-result">{resultMessage(result)}</p>}
+      {result !== null && matchWinnerName !== null && (
+        <p className="seat-panel-result">{matchWinnerName} wins the game!</p>
+      )}
       {result === null && active && !visible && (
-        <p className="hint">{canToggle ? 'Show your cards to take your turn' : 'Turn the device around to take your turn'}</p>
+        <p className="hint">
+          {canToggle ? 'Show your cards to take your turn' : 'Tip the device towards you to see your hand'}
+        </p>
       )}
       {result === null && active && visible && round.phase === 'discard' && selected === null && (
         <p className="hint">Tap a card to discard it (knock at {KNOCK_LIMIT} deadwood or less)</p>
@@ -318,7 +348,7 @@ function Screen({ onExit, children }: { onExit: () => void; children: ReactNode 
 }
 
 export default function Rummy({ players, onExit }: RummyProps) {
-  const { orientation, posture, angle, tiltAccess, requestTilt } = useDeviceView()
+  const { tilt, tiltAccess, portrait, locked, canLock, enable } = useDeviceView()
   const [state, setState] = usePersistentState<RummyState>(
     STORAGE_KEYS.rummy,
     () => ({
@@ -350,6 +380,7 @@ export default function Rummy({ players, onExit }: RummyProps) {
   }
 
   const result = round.result
+
   const setRound = (next: Round) => {
     setState(current => {
       if (next.result === null || current.round?.result !== null) {
@@ -396,21 +427,16 @@ export default function Rummy({ players, onExit }: RummyProps) {
     })
   }
 
-  // Three postures, told apart by the tilt sensor and the screen rotation the
-  // browser reports as the device is turned around:
-  //   - flat on the table: shared between both players, so each hand stays
-  //     face down behind its own show/hide toggle.
-  //   - held up in landscape: the browser turns the page to face whoever is
-  //     holding it, so the seat at the bottom of the screen is theirs and only
-  //     that hand is shown.
-  // Without tilt permission the toggles are always used, which is safe.
-  const held = posture === 'upright' && orientation === 'landscape' && tiltAccess === 'granted'
-  const nearIndex = nearSeat(angle)
-  const holder = round.hands[nearIndex]
+  // The page stays in portrait and each seat is turned a quarter turn to face
+  // its own player, so angling the device towards someone only moves the tilt
+  // reading — the browser never spins the layout out from under them.
+  const [left, right] = round.hands
+  const tilted = tiltAccess === 'granted'
+  const facing = tilt === 'left' ? left : tilt === 'right' ? right : null
 
   const isVisible = (hand: Hand) => {
     if (result !== null) return true
-    if (held) return hand.playerId === holder.playerId
+    if (tilted) return facing?.playerId === hand.playerId
     return revealed.includes(hand.playerId)
   }
 
@@ -432,75 +458,55 @@ export default function Rummy({ players, onExit }: RummyProps) {
       score={scores[hand.playerId] ?? 0}
       round={round}
       visible={isVisible(hand)}
-      canToggle={!held && result === null}
+      canToggle={!tilted && result === null}
+      matchWinnerName={matchWinnerName}
       onToggle={() => toggle(hand)}
       onDrawStock={() => act(drawFromStock(round, hand.playerId))}
       onDrawDiscard={() => act(drawFromDiscard(round, hand.playerId))}
       onDiscard={() => selected !== null && act(discard(round, hand.playerId, selected))}
       onKnock={() => selected !== null && act(knock(round, hand.playerId, selected))}
+      onDeal={deal}
+      onNewGame={newGame}
       selected={round.turn === hand.playerId ? selected : null}
       onSelect={card => setSelected(card)}
     />
   )
 
   const topCard = topOfDiscard(round)
+  const setupNeeded = tiltAccess === 'prompt' || (canLock && !locked)
 
   return (
     <main className="view-rummy view-rummy--table">
-      <div className="table">
-        <div className="table-side">
-          <GameBar onExit={onExit} />
+      <div className="rummy-table">
+        <RotatedSeat degrees={90}>{panelFor(left)}</RotatedSeat>
 
-          <div className="pile-area">
-            <div className="piles">
-              <div className="pile">
-                <CardFace faceDown />
-                <span className="pile-label">Stock {round.stock.length}</span>
-              </div>
-              <div className="pile">
-                {topCard === null ? <span className="hand-card hand-card--empty" /> : <CardFace card={topCard} />}
-                <span className="pile-label">Discard</span>
-              </div>
+        {/* Only the shared piles sit in the middle, since it's the one strip
+            that can't face both players at once. */}
+        <div className="rummy-centre">
+          <button type="button" className="btn-ghost" onClick={onExit}>
+            Exit
+          </button>
+
+          <div className="piles">
+            <div className="pile">
+              <CardFace faceDown />
+              <span className="pile-label">{round.stock.length}</span>
             </div>
-
-            {result === null ? (
-              <>
-                <p className="hint">
-                  {round.hands.find(hand => hand.playerId === round.turn)?.name} to{' '}
-                  {round.phase === 'draw' ? 'draw' : 'discard'}
-                </p>
-                {tiltAccess === 'prompt' && (
-                  <button type="button" className="btn-secondary" onClick={requestTilt}>
-                    Use tilt to show hands
-                  </button>
-                )}
-                {held && <p className="hint">Holding — {holder.name}'s hand only</p>}
-              </>
-            ) : (
-              <>
-                <p className="pile-result">{resultMessage(result)}</p>
-                {matchWinnerName !== null && <p className="pile-result">{matchWinnerName} wins the game!</p>}
-                <div className="panel-actions">
-                  {matchWinnerName === null ? (
-                    <button type="button" className="btn-primary" onClick={deal}>
-                      Next hand
-                    </button>
-                  ) : (
-                    <button type="button" className="btn-primary" onClick={newGame}>
-                      New game
-                    </button>
-                  )}
-                  <button type="button" className="btn-secondary" onClick={onExit}>
-                    Back to games
-                  </button>
-                </div>
-              </>
-            )}
+            <div className="pile">
+              {topCard === null ? <span className="hand-card hand-card--empty" /> : <CardFace card={topCard} />}
+            </div>
           </div>
+
+          {setupNeeded ? (
+            <button type="button" className="btn-secondary" onClick={enable}>
+              Tilt setup
+            </button>
+          ) : (
+            !portrait && <span className="pile-label">Turn upright</span>
+          )}
         </div>
 
-        <div className="seat-area seat-area--top">{panelFor(round.hands[1 - nearIndex])}</div>
-        <div className="seat-area seat-area--bottom">{panelFor(round.hands[nearIndex])}</div>
+        <RotatedSeat degrees={-90}>{panelFor(right)}</RotatedSeat>
       </div>
     </main>
   )

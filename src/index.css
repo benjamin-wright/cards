@@ -730,14 +730,63 @@ button:disabled {
   padding: 40px 16px;
 }
 
+/* The table deliberately ignores the orientation media queries the blackjack
+   table uses. The page is pinned to portrait and each seat is turned a quarter
+   turn to face its own player, so angling the device towards someone changes
+   only the tilt reading and never re-flows the layout mid-turn. */
 .view-rummy--table {
-  padding: 12px;
+  align-items: stretch;
+  padding: 0;
+  gap: 0;
+  min-height: 0;
+}
+
+.rummy-table {
+  flex: 1;
+  display: grid;
+  grid-template-rows: 1fr auto 1fr;
+  width: 100%;
+  min-height: 0;
+}
+
+.seat-slot {
+  position: relative;
+  overflow: hidden;
+  min-height: 0;
+}
+
+/* A rotated element keeps its original box, so the rotor is given the slot's
+   dimensions swapped over (in JS, from a ResizeObserver) before it turns. */
+.seat-rotor {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px;
+}
+
+.rummy-centre {
+  display: flex;
+  align-items: center;
+  justify-content: center;
   gap: 12px;
-  justify-content: space-between;
+  padding: 6px 10px;
+  background: rgba(0, 0, 0, 0.18);
+}
+
+.rummy-centre .btn-ghost,
+.rummy-centre .btn-secondary {
+  padding: 4px 10px;
+  font-size: 0.75rem;
 }
 
 .view-rummy .seat-panel {
+  width: 100%;
+  max-width: none;
   gap: 8px;
+  padding: 10px 14px;
 }
 
 .seat-panel--active {
@@ -752,6 +801,13 @@ button:disabled {
   white-space: nowrap;
 }
 
+.seat-panel-result {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text-strong);
+  text-align: center;
+}
+
 /* Melds are formed automatically, so each group is boxed and labelled with
    the deadwood left over at the end. */
 .grouped-hand {
@@ -759,7 +815,7 @@ button:disabled {
   flex-wrap: wrap;
   align-items: flex-start;
   justify-content: center;
-  gap: 8px;
+  gap: 6px;
   width: 100%;
 }
 
@@ -768,7 +824,7 @@ button:disabled {
   flex-direction: column;
   align-items: center;
   gap: 4px;
-  padding: 6px 8px;
+  padding: 4px 6px;
   border: 1px dashed var(--accent-border);
   border-radius: var(--radius);
   background: var(--accent-bg);
@@ -786,6 +842,14 @@ button:disabled {
   text-transform: uppercase;
   letter-spacing: 0.08em;
   color: var(--text-muted);
+}
+
+.view-rummy .hand {
+  gap: 4px;
+}
+
+.view-rummy .seat-panel .hand-card {
+  width: 40px;
 }
 
 button.hand-card {
@@ -813,57 +877,26 @@ button.hand-card:not(:disabled):hover {
   box-shadow: none;
 }
 
-.pile-area {
-  grid-area: house;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
-  color: #fff;
-}
-
 .piles {
   display: flex;
-  gap: 12px;
+  align-items: center;
+  gap: 10px;
 }
 
 .pile {
   display: flex;
-  flex-direction: column;
   align-items: center;
-  gap: 4px;
+  gap: 5px;
+}
+
+.pile .hand-card {
+  width: 34px;
 }
 
 .pile-label {
-  font-size: 0.7rem;
+  font-size: 0.68rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.08em;
   color: rgba(255, 255, 255, 0.85);
-}
-
-.pile-area .hint {
-  color: rgba(255, 255, 255, 0.75);
-}
-
-.pile-result {
-  color: #fff;
-  font-weight: 700;
-  text-align: center;
-}
-
-@media (orientation: landscape) {
-  .pile-area {
-    flex: 1;
-    justify-content: center;
-    padding: 0 8px;
-  }
-
-  .view-rummy .seat-panel .hand-card {
-    width: 34px;
-  }
-
-  .view-rummy .meld {
-    padding: 4px 6px;
-  }
 }

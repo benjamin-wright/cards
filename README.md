@@ -41,21 +41,30 @@ worth the defender's whole hand plus 25, and the hand is abandoned as a draw if
 the stock runs down to two cards. First to 100 points wins the game.
 
 Hands are dealt face down so neither player can read the other's cards. The
-tilt sensor and the screen rotation together tell three positions apart:
+table is laid out for a device lying flat between the two players, with the
+piles across the middle and each player's panel turned a quarter turn to face
+their own side — one player sits to the left of the device, the other to the
+right.
 
-- **Flat on the table** — the device is shared, so both hands stay face down
-  and each side gets its own "Show cards" / "Hide cards" toggle. Cards go back
-  face down as soon as the turn passes on.
-- **Held up in landscape** — the browser turns the page to face whoever picked
-  it up, so the seat at the bottom of the screen is theirs. Only that hand is
-  shown, and it stays shown whether or not it's their turn.
-- **Held upside down in landscape** — the same, for the player on the other
-  side of the table.
+The page is deliberately pinned to portrait, and the "Tilt setup" button asks
+for that lock (plus tilt access, where the browser requires permission). With
+the page locked, angling the device towards a player only changes the tilt
+reading, so the browser never spins the layout around mid-turn:
 
-Tilt sensors need permission on some platforms, so a "Use tilt to show hands"
-button appears when the browser asks for it. Until that's granted (or if the
-device has no tilt sensor at all) the manual toggles are used throughout.
-Reveals are never stored, so a refresh always comes back with hands face down.
+- **Flat, or held level** — the device belongs to nobody and both hands stay
+  face down.
+- **Angled towards the left-hand player** — only their hand is shown.
+- **Angled towards the right-hand player** — only their hand is shown.
+
+The hand appears past 35° and hides again below 20°, leaving a dead band so a
+wobbling hand doesn't flicker the cards open and shut. Because each panel is
+already turned to face its owner, the turn prompt, result and "Next hand"
+button all live inside the panels rather than in the middle strip.
+
+Where tilt isn't available — no sensor, or permission refused — each seat falls
+back to its own "Show cards" / "Hide cards" toggle, and cards go back face down
+as soon as the turn passes on. Reveals are never stored, so a refresh always
+comes back with hands face down.
 
 ## Development
 

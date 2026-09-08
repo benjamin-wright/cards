@@ -1,50 +1,32 @@
 import { describe, expect, it } from 'vitest'
-import { FLAT_LIMIT, UPRIGHT_LIMIT, nearSeat, nextPosture, screenTilt } from './orientation'
+import { HIDE_ANGLE, REVEAL_ANGLE, nextTilt } from './orientation'
 
-describe('screenTilt', () => {
-  it('is zero when the device is level', () => {
-    expect(screenTilt(0, 0)).toBeCloseTo(0)
+describe('nextTilt', () => {
+  it('reads a level device as belonging to nobody', () => {
+    expect(nextTilt('left', 0)).toBe('flat')
+    expect(nextTilt('right', -HIDE_ANGLE)).toBe('flat')
   })
 
-  it('is a right angle when the device is stood on an edge', () => {
-    expect(screenTilt(90, 0)).toBeCloseTo(90)
-    expect(screenTilt(0, 90)).toBeCloseTo(90)
+  it('faces the player on the left when the screen is turned that way', () => {
+    expect(nextTilt('flat', -REVEAL_ANGLE)).toBe('left')
+    expect(nextTilt('flat', -80)).toBe('left')
   })
 
-  it('treats face up and face down the same', () => {
-    expect(screenTilt(180, 0)).toBeCloseTo(0)
+  it('faces the player on the right when the screen is turned that way', () => {
+    expect(nextTilt('flat', REVEAL_ANGLE)).toBe('right')
+    expect(nextTilt('flat', 80)).toBe('right')
   })
 
-  it('combines both axes', () => {
-    expect(screenTilt(30, 30)).toBeGreaterThan(screenTilt(30, 0))
-  })
-})
+  it('holds the last reading in the dead band between the two limits', () => {
+    const between = (HIDE_ANGLE + REVEAL_ANGLE) / 2
 
-describe('nextPosture', () => {
-  it('reads a level device as flat', () => {
-    expect(nextPosture('upright', 5, -5)).toBe('flat')
+    expect(nextTilt('flat', between)).toBe('flat')
+    expect(nextTilt('right', between)).toBe('right')
+    expect(nextTilt('left', -between)).toBe('left')
   })
 
-  it('reads a raised device as upright', () => {
-    expect(nextPosture('flat', 70, 0)).toBe('upright')
-  })
-
-  it('holds the last posture between the two limits', () => {
-    const between = (FLAT_LIMIT + UPRIGHT_LIMIT) / 2
-
-    expect(nextPosture('flat', between, 0)).toBe('flat')
-    expect(nextPosture('upright', between, 0)).toBe('upright')
-  })
-})
-
-describe('nearSeat', () => {
-  it('faces the first seat when the page is the right way up', () => {
-    expect(nearSeat(0)).toBe(0)
-    expect(nearSeat(90)).toBe(0)
-  })
-
-  it('faces the second seat when the device is turned around', () => {
-    expect(nearSeat(180)).toBe(1)
-    expect(nearSeat(270)).toBe(1)
+  it('swaps straight over when the device is turned the other way', () => {
+    expect(nextTilt('left', REVEAL_ANGLE)).toBe('right')
+    expect(nextTilt('right', -REVEAL_ANGLE)).toBe('left')
   })
 })
