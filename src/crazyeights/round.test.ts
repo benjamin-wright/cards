@@ -78,6 +78,7 @@ describe('canPlay', () => {
     const round = staged({
       discard: hand('5H'),
       activeSuit: 'hearts',
+      activeRank: '5',
       hands: [
         { playerId: 'a', name: 'Ada', cards: hand('9H') },
         { playerId: 'b', name: 'Bob', cards: hand('3C') },
@@ -92,6 +93,7 @@ describe('canPlay', () => {
     const round = staged({
       discard: hand('5H'),
       activeSuit: 'hearts',
+      activeRank: '5',
       hands: [
         { playerId: 'a', name: 'Ada', cards: hand('5C') },
         { playerId: 'b', name: 'Bob', cards: hand('3C') },
@@ -106,6 +108,7 @@ describe('canPlay', () => {
     const round = staged({
       discard: hand('5H'),
       activeSuit: 'hearts',
+      activeRank: '5',
       hands: [
         { playerId: 'a', name: 'Ada', cards: hand('9C') },
         { playerId: 'b', name: 'Bob', cards: hand('3C') },
@@ -120,6 +123,7 @@ describe('canPlay', () => {
     const round = staged({
       discard: hand('5H'),
       activeSuit: 'hearts',
+      activeRank: '5',
       hands: [
         { playerId: 'a', name: 'Ada', cards: hand('9H') },
         { playerId: 'b', name: 'Bob', cards: hand('9C') },
@@ -130,24 +134,41 @@ describe('canPlay', () => {
     expect(canPlay(round, 'b', { rank: '9', suit: 'clubs' })).toBe(false)
   })
 
-  it('always allows a jack, as a wild card', () => {
+  it('always allows an eight, as a wild card', () => {
     const round = staged({
       discard: hand('5H'),
       activeSuit: 'hearts',
+      activeRank: '5',
       hands: [
-        { playerId: 'a', name: 'Ada', cards: hand('JC') },
+        { playerId: 'a', name: 'Ada', cards: hand('8C') },
         { playerId: 'b', name: 'Bob', cards: hand('3C') },
       ],
       turn: 'a',
     })
 
-    expect(canPlay(round, 'a', { rank: 'J', suit: 'clubs' })).toBe(true)
+    expect(canPlay(round, 'a', { rank: '8', suit: 'clubs' })).toBe(true)
+  })
+
+  it('always allows a ten, as a transparent card', () => {
+    const round = staged({
+      discard: hand('5H'),
+      activeSuit: 'hearts',
+      activeRank: '5',
+      hands: [
+        { playerId: 'a', name: 'Ada', cards: hand('10C') },
+        { playerId: 'b', name: 'Bob', cards: hand('3C') },
+      ],
+      turn: 'a',
+    })
+
+    expect(canPlay(round, 'a', { rank: '10', suit: 'clubs' })).toBe(true)
   })
 
   it('only allows a two while a pick-up is pending', () => {
     const round = staged({
       discard: hand('2H'),
       activeSuit: 'hearts',
+      activeRank: '2',
       pendingPickup: 2,
       hands: [
         { playerId: 'a', name: 'Ada', cards: hand('2C', '9H') },
@@ -166,6 +187,7 @@ describe('playCard', () => {
     const round = staged({
       discard: hand('5H'),
       activeSuit: 'hearts',
+      activeRank: '5',
       hands: [
         { playerId: 'a', name: 'Ada', cards: hand('9H', '3C') },
         { playerId: 'b', name: 'Bob', cards: hand('4D') },
@@ -182,21 +204,23 @@ describe('playCard', () => {
     expect(next.drawn).toBeNull()
   })
 
-  it('requires a chosen suit for a jack, and switches play to it', () => {
+  it('requires a chosen suit for an eight, and switches play to it', () => {
     const round = staged({
       discard: hand('5H'),
       activeSuit: 'hearts',
+      activeRank: '5',
       hands: [
-        { playerId: 'a', name: 'Ada', cards: hand('JH', '3C') },
+        { playerId: 'a', name: 'Ada', cards: hand('8H', '3C') },
         { playerId: 'b', name: 'Bob', cards: hand('4D') },
       ],
       turn: 'a',
     })
 
-    expect(playCard(round, 'a', { rank: 'J', suit: 'hearts' })).toBe(round)
+    expect(playCard(round, 'a', { rank: '8', suit: 'hearts' })).toBe(round)
 
-    const next = playCard(round, 'a', { rank: 'J', suit: 'hearts' }, 'clubs')
+    const next = playCard(round, 'a', { rank: '8', suit: 'hearts' }, 'clubs')
     expect(next.activeSuit).toBe('clubs')
+    expect(next.activeRank).toBe('8')
     expect(next.turn).toBe('b')
   })
 
@@ -204,6 +228,7 @@ describe('playCard', () => {
     const round = staged({
       discard: hand('5H'),
       activeSuit: 'hearts',
+      activeRank: '5',
       pendingPickup: 2,
       hands: [
         { playerId: 'a', name: 'Ada', cards: hand('2C', '3C') },
@@ -217,25 +242,46 @@ describe('playCard', () => {
     expect(next.turn).toBe('b')
   })
 
-  it('skips the other player when an eight is played, so the turn returns to the same player', () => {
+  it('skips the other player when a jack is played, so the turn returns to the same player', () => {
     const round = staged({
       discard: hand('5H'),
       activeSuit: 'hearts',
+      activeRank: '5',
       hands: [
-        { playerId: 'a', name: 'Ada', cards: hand('8H', '3C') },
+        { playerId: 'a', name: 'Ada', cards: hand('JH', '3C') },
         { playerId: 'b', name: 'Bob', cards: hand('4D') },
       ],
       turn: 'a',
     })
 
-    const next = playCard(round, 'a', { rank: '8', suit: 'hearts' })
+    const next = playCard(round, 'a', { rank: 'J', suit: 'hearts' })
     expect(next.turn).toBe('a')
+  })
+
+  it('passes through transparently when a ten is played, keeping the active suit and rank', () => {
+    const round = staged({
+      discard: hand('5H'),
+      activeSuit: 'hearts',
+      activeRank: '5',
+      hands: [
+        { playerId: 'a', name: 'Ada', cards: hand('10H', '3C') },
+        { playerId: 'b', name: 'Bob', cards: hand('4D') },
+      ],
+      turn: 'a',
+    })
+
+    const next = playCard(round, 'a', { rank: '10', suit: 'hearts' })
+    expect(topOfDiscard(next)).toEqual({ rank: '10', suit: 'hearts' })
+    expect(next.activeSuit).toBe('hearts')
+    expect(next.activeRank).toBe('5')
+    expect(next.turn).toBe('b')
   })
 
   it('ends the round when a hand empties, scoring the loser\'s remaining cards', () => {
     const round = staged({
       discard: hand('5H'),
       activeSuit: 'hearts',
+      activeRank: '5',
       hands: [
         { playerId: 'a', name: 'Ada', cards: hand('9H') },
         { playerId: 'b', name: 'Bob', cards: hand('4D', 'KC') },
@@ -255,6 +301,7 @@ describe('playCard', () => {
     const round = staged({
       discard: hand('5H'),
       activeSuit: 'hearts',
+      activeRank: '5',
       hands: [
         { playerId: 'a', name: 'Ada', cards: hand('9C') },
         { playerId: 'b', name: 'Bob', cards: hand('4D') },
@@ -271,6 +318,7 @@ describe('drawing', () => {
     const round = staged({
       discard: hand('5H'),
       activeSuit: 'hearts',
+      activeRank: '5',
       stock: hand('9H', '2C'),
       hands: [
         { playerId: 'a', name: 'Ada', cards: hand('3C') },
@@ -290,6 +338,7 @@ describe('drawing', () => {
     const round = staged({
       discard: hand('5H'),
       activeSuit: 'hearts',
+      activeRank: '5',
       stock: hand('9C', '2H'),
       hands: [
         { playerId: 'a', name: 'Ada', cards: hand('3C') },
@@ -308,6 +357,7 @@ describe('drawing', () => {
     const round = staged({
       discard: hand('5H'),
       activeSuit: 'hearts',
+      activeRank: '5',
       stock: hand('9H', '2C', '6D'),
       hands: [
         { playerId: 'a', name: 'Ada', cards: hand('3C') },
@@ -324,6 +374,7 @@ describe('drawing', () => {
     const round = staged({
       discard: hand('2H'),
       activeSuit: 'hearts',
+      activeRank: '2',
       pendingPickup: 4,
       stock: hand('9H', '2C', '6D'),
       hands: [
@@ -372,6 +423,7 @@ describe('canPlayAny', () => {
     const round = staged({
       discard: hand('5H'),
       activeSuit: 'hearts',
+      activeRank: '5',
       hands: [
         { playerId: 'a', name: 'Ada', cards: hand('9C', '2D') },
         { playerId: 'b', name: 'Bob', cards: hand('4D') },
@@ -397,6 +449,7 @@ describe('pass', () => {
     const round = staged({
       discard: hand('5H'),
       activeSuit: 'hearts',
+      activeRank: '5',
       drawn: { rank: '9', suit: 'hearts' },
       hands: [
         { playerId: 'a', name: 'Ada', cards: hand('3C', '9H') },

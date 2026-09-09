@@ -1,6 +1,17 @@
-import { createDeck, isCardList, shuffle, cardKey, SUITS, type Card, type Rng, type Suit } from '../cards'
+import {
+  createDeck,
+  isCardList,
+  shuffle,
+  cardKey,
+  RANKS,
+  SUITS,
+  type Card,
+  type Rank,
+  type Rng,
+  type Suit,
+} from '../cards'
 import type { Player } from '../players'
-import { HAND_SIZE, PICKUP_AMOUNT, PICKUP_RANK, SKIP_RANK, WILD_RANK, handPoints } from './rules'
+import { HAND_SIZE, PICKUP_AMOUNT, PICKUP_RANK, SKIP_RANK, TRANSPARENT_RANK, WILD_RANK, handPoints } from './rules'
 
 export type Hand = {
   playerId: string
@@ -20,8 +31,12 @@ export type Round = {
   discard: Card[]
   hands: Hand[]
   turn: string
-  /** The suit that must be matched — the top card's suit, or the suit chosen after a jack. */
+  /** The suit that must be matched — the top card's suit, or the suit chosen after an eight. */
   activeSuit: Suit
+  /** The rank that can also be matched instead of the suit. Transparent tens
+   * pass straight through without changing this or the active suit, so the
+   * next play still has to match whatever was underneath the ten. */
+  activeRank: Rank
   /** Cards the player to move must pick up, unless they can play a two to pass it on. */
   pendingPickup: number
   /** The card drawn this turn, if any, still waiting on a play-or-pass decision. */
@@ -54,6 +69,7 @@ export function isRound(value: unknown): value is Round {
     typeof round.turn === 'string' &&
     round.hands.some(hand => hand.playerId === round.turn) &&
     SUITS.includes(round.activeSuit!) &&
+    RANKS.includes(round.activeRank!) &&
     typeof round.pendingPickup === 'number' &&
     Number.isFinite(round.pendingPickup) &&
     (round.drawn === null || isCardList([round.drawn])) &&
@@ -63,9 +79,9 @@ export function isRound(value: unknown): value is Round {
 
 /**
  * Deals seven cards each and turns one card up to start the discard pile. The
- * starting upcard's rank has no special effect, even if it's a two, eight or
- * jack — only cards played during the hand trigger those. `firstPlayerId`
- * takes the opening turn.
+ * starting upcard's rank has no special effect, even if it's a two, eight,
+ * ten or jack — only cards played during the hand trigger those.
+ * `firstPlayerId` takes the opening turn.
  */
 export function createRound(players: Player[], firstPlayerId?: string, rng: Rng = Math.random): Round {
   const deck = shuffle(createDeck(), rng)
@@ -91,6 +107,7 @@ export function createRound(players: Player[], firstPlayerId?: string, rng: Rng 
     hands,
     turn,
     activeSuit: upcard.suit,
+    activeRank: upcard.rank,
     pendingPickup: 0,
     drawn: null,
     result: null,
@@ -125,8 +142,12 @@ function removeCard(cards: Card[], card: Card): Card[] {
 function matchesPile(round: Round, card: Card): boolean {
   if (round.pendingPickup > 0) return card.rank === PICKUP_RANK
 
-  const top = topOfDiscard(round)
-  return card.rank === WILD_RANK || card.suit === round.activeSuit || (top !== null && card.rank === top.rank)
+  return (
+    card.rank === WILD_RANK ||
+    card.rank === TRANSPARENT_RANK ||
+    card.suit === round.activeSuit ||
+    card.rank === round.activeRank
+  )
 }
 
 export function canPlay(round: Round, playerId: string, card: Card): boolean {
@@ -147,10 +168,12 @@ export function canPlayAny(round: Round, playerId: string): boolean {
 }
 
 /**
- * Plays a card, matching the active suit, the discard's rank, or as a wild
- * jack. Jacks require a `chosenSuit` to switch play to. Twos add to a pick-up
- * that stacks until someone can't (or won't) pass it on further, and eights
- * skip the other player's turn straight back to the one who played it.
+ * Plays a card, matching the active suit, the active rank, or as a wild
+ * eight. Eights require a `chosenSuit` to switch play to. Tens are
+ * transparent, landing on anything without changing what the next card has to
+ * match. Twos add to a pick-up that stacks until someone can't (or won't)
+ * pass it on further, and jacks skip the other player's turn straight back to
+ * the one who played it.
  */
 export function playCard(round: Round, playerId: string, card: Card, chosenSuit?: Suit): Round {
   const hand = handFor(round, playerId)
@@ -158,12 +181,15 @@ export function playCard(round: Round, playerId: string, card: Card, chosenSuit?
   if (card.rank === WILD_RANK && chosenSuit === undefined) return round
 
   const remaining = removeCard(hand.cards, card)
-  const activeSuit = card.rank === WILD_RANK ? chosenSuit! : card.suit
+  const transparent = card.rank === TRANSPARENT_RANK
+  const activeSuit = card.rank === WILD_RANK ? chosenSuit! : transparent ? round.activeSuit : card.suit
+  const activeRank = transparent ? round.activeRank : card.rank
   const pendingPickup = card.rank === PICKUP_RANK ? round.pendingPickup + PICKUP_AMOUNT : 0
 
   const played: Round = {
     ...withHand({ ...round, discard: [...round.discard, card] }, playerId, remaining),
     activeSuit,
+    activeRank,
     pendingPickup,
     drawn: null,
   }

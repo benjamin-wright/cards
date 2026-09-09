@@ -122,7 +122,7 @@ function resultMessage(result: RoundResult): string {
 function SuitPicker({ onChoose }: { onChoose: (suit: Suit) => void }) {
   return (
     <div className="panel-actions">
-      <p className="hint">Choose a suit for the jack</p>
+      <p className="hint">Choose a suit for the eight</p>
       {SUIT_ORDER.map(suit => (
         <button type="button" key={suit} className="btn-secondary" onClick={() => onChoose(suit)}>
           {SUIT_SYMBOLS[suit]}

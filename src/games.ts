@@ -52,7 +52,7 @@ export const games: Game[] = [
   {
     id: 'crazy-eights',
     name: 'Crazy Eights',
-    description: 'Match suit or rank to go out first — eights skip, twos pile up, jacks change suit.',
+    description: 'Match suit or rank to go out first — eights change suit, tens are see-through, jacks skip, twos pile up.',
     minPlayers: 2,
     maxPlayers: 2,
     rank: '8',
