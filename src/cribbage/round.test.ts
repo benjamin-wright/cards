@@ -8,6 +8,7 @@ import {
   isRound,
   playCard,
 } from './round'
+import { cardValue } from './scoring'
 
 const mockPlayers: Player[] = [
   { id: 'p1', name: 'Alice', cash: 100 },
@@ -69,14 +70,17 @@ describe('Cribbage round state and logic', () => {
     round = discardToCrib(round, 'p2', [round.hands[1].dealt[0], round.hands[1].dealt[1]])
 
     // Play all cards
-    while (round.phase === 'play') {
+    let maxSteps = 100
+    while (round.phase === 'play' && maxSteps-- > 0) {
       const turn = round.turn
       const hand = round.hands.find(h => h.playerId === turn)!
       const playable = hand.hand.find(
-        c => !hand.played.includes(c) && c.rank !== undefined,
+        c => !hand.played.includes(c) && cardValue(c) <= 31 - round.currentCount,
       )
-      if (playable && canPlayAnyCard(round, turn)) {
-        round = playCard(round, turn, playable)
+      if (playable) {
+        const nextRound = playCard(round, turn, playable)
+        if (nextRound === round) break
+        round = nextRound
       } else {
         break
       }
