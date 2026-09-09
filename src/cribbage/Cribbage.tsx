@@ -6,6 +6,7 @@ import { useDeviceView } from '../orientation'
 import { STORAGE_KEYS, usePersistentState } from '../storage'
 import CardFace from '../views/CardFace'
 import RotatedSeat from '../views/RotatedSeat'
+import CribbageBoard from './CribbageBoard'
 import {
   TARGET_SCORE,
   advanceShow,
@@ -376,55 +377,81 @@ export default function Cribbage({ players, onExit }: CribbageProps) {
   const setupNeeded = tiltAccess === 'prompt' || (canLock && !locked)
 
   return (
-    <main className="view-rummy view-rummy--table">
-      <div className="rummy-table">
-        <RotatedSeat degrees={90}>{panelFor(left)}</RotatedSeat>
+    <main className="view-cribbage view-cribbage--table">
+      <div className="cribbage-table">
+        {/* Dynamic Cribbage Board on the left */}
+        <div className="cribbage-board-container">
+          <CribbageBoard
+            player1Name={left.name}
+            player2Name={right.name}
+            player1Score={round.scores[left.playerId] ?? 0}
+            player2Score={round.scores[right.playerId] ?? 0}
+            player1PrevScore={round.previousScores?.[left.playerId] ?? 0}
+            player2PrevScore={round.previousScores?.[right.playerId] ?? 0}
+            targetScore={TARGET_SCORE}
+          />
+        </div>
 
-        <div className="rummy-centre">
-          <button type="button" className="btn-ghost" onClick={onExit}>
-            Exit
-          </button>
+        {/* Player seats and controls on the right */}
+        <div className="cribbage-right-side">
+          <RotatedSeat degrees={90}>{panelFor(left)}</RotatedSeat>
 
-          <div className="piles">
-            <div className="pile">
-              <span className="pile-label">Starter</span>
-              {round.starter === null ? (
-                <CardFace faceDown />
-              ) : (
-                <CardFace card={round.starter} />
-              )}
-            </div>
+          <div className="cribbage-centre">
+            <button type="button" className="btn-ghost" onClick={onExit}>
+              Exit
+            </button>
 
-            <div className="pile">
-              <span className="pile-label">Crib</span>
-              {round.phase === 'show' || round.phase === 'summary' ? (
-                <span className="hand">
-                  {round.crib.map((card, idx) => (
-                    <CardFace key={`${cardKey(card)}-${idx}`} card={card} />
-                  ))}
-                </span>
-              ) : (
-                <span className="pile-label">({round.crib.length} cards)</span>
-              )}
-            </div>
-
-            {round.phase === 'play' && (
+            <div className="piles">
               <div className="pile">
-                <span className="pile-label">Count: {round.currentCount} / 31</span>
+                <span className="pile-label">Starter</span>
+                {round.starter === null ? (
+                  <CardFace faceDown />
+                ) : (
+                  <CardFace card={round.starter} />
+                )}
               </div>
+
+              {/* Graphical representation of the last card played */}
+              <div className="pile pile--last-played">
+                <span className="pile-label">Last Played</span>
+                {round.lastPlayedCard ? (
+                  <CardFace card={round.lastPlayedCard} highlighted />
+                ) : (
+                  <span className="hand-card hand-card--empty" aria-label="No card played yet" />
+                )}
+              </div>
+
+              <div className="pile">
+                <span className="pile-label">Crib</span>
+                {round.phase === 'show' || round.phase === 'summary' ? (
+                  <span className="hand">
+                    {round.crib.map((card, idx) => (
+                      <CardFace key={`${cardKey(card)}-${idx}`} card={card} />
+                    ))}
+                  </span>
+                ) : (
+                  <span className="pile-label">({round.crib.length} cards)</span>
+                )}
+              </div>
+
+              {round.phase === 'play' && (
+                <div className="pile">
+                  <span className="pile-label">Count: {round.currentCount} / 31</span>
+                </div>
+              )}
+            </div>
+
+            {setupNeeded ? (
+              <button type="button" className="btn-secondary" onClick={enable}>
+                Tilt setup
+              </button>
+            ) : (
+              !portrait && <span className="pile-label">Turn upright</span>
             )}
           </div>
 
-          {setupNeeded ? (
-            <button type="button" className="btn-secondary" onClick={enable}>
-              Tilt setup
-            </button>
-          ) : (
-            !portrait && <span className="pile-label">Turn upright</span>
-          )}
+          <RotatedSeat degrees={-90}>{panelFor(right)}</RotatedSeat>
         </div>
-
-        <RotatedSeat degrees={-90}>{panelFor(right)}</RotatedSeat>
       </div>
     </main>
   )

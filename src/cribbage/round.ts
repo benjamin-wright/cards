@@ -36,6 +36,9 @@ export type Round = {
   lastPlayerId: string | null
   turn: string
   scores: Record<string, number>
+  previousScores: Record<string, number>
+  lastPlayedCard: Card | null
+  lastPlayedBy: string | null
   lastLog: string | null
   winnerId: string | null
 }
@@ -96,6 +99,9 @@ export function createRound(
     lastPlayerId: null,
     turn: nonDId,
     scores: initScores,
+    previousScores: { ...initScores },
+    lastPlayedCard: null,
+    lastPlayedBy: null,
     lastLog: 'Pick 2 cards to discard to the crib.',
     winnerId: null,
   }
@@ -133,7 +139,10 @@ export function isRound(value: unknown): value is Round {
     typeof round.currentCount === 'number' &&
     typeof round.turn === 'string' &&
     typeof round.scores === 'object' &&
-    round.scores !== null
+    round.scores !== null &&
+    (round.previousScores === undefined || (typeof round.previousScores === 'object' && round.previousScores !== null)) &&
+    (round.lastPlayedCard === undefined || round.lastPlayedCard === null || isCard(round.lastPlayedCard)) &&
+    (round.lastPlayedBy === undefined || round.lastPlayedBy === null || typeof round.lastPlayedBy === 'string')
   )
 }
 
@@ -177,6 +186,7 @@ export function discardToCrib(round: Round, playerId: string, selectedCards: Car
   const remainingDeck = round.deck.slice(1)
 
   const heels = scoreHeels(starter)
+  const prevScores = { ...round.scores }
   const nextScores = { ...round.scores }
   let winnerId = round.winnerId
   let phase: Phase = 'play'
@@ -200,6 +210,7 @@ export function discardToCrib(round: Round, playerId: string, selectedCards: Car
     phase,
     turn: round.nonDealerId,
     scores: nextScores,
+    previousScores: prevScores,
     winnerId,
     lastLog: log,
   }
@@ -247,6 +258,7 @@ export function playCard(round: Round, playerId: string, card: Card): Round {
     nextCount,
   )
 
+  const prevScores = { ...round.scores }
   const nextScores = { ...round.scores }
   if (pegging.points > 0) {
     nextScores[playerId] = (nextScores[playerId] ?? 0) + pegging.points
@@ -257,6 +269,9 @@ export function playCard(round: Round, playerId: string, card: Card): Round {
       ...round,
       hands: nextHands,
       scores: nextScores,
+      previousScores: prevScores,
+      lastPlayedCard: card,
+      lastPlayedBy: playerId,
       winnerId: playerId,
       phase: 'summary',
       lastLog: `${hand.name} reached ${TARGET_SCORE} points and won!`,
@@ -272,6 +287,9 @@ export function playCard(round: Round, playerId: string, card: Card): Round {
     currentCount: nextCount,
     playSequence: nextSeq,
     scores: nextScores,
+    previousScores: prevScores,
+    lastPlayedCard: card,
+    lastPlayedBy: playerId,
   }
 
   let desc = `${hand.name} played ${card.rank}`
@@ -329,11 +347,13 @@ export function playCard(round: Round, playerId: string, card: Card): Round {
   }
 
   // Neither can play under 31 -> Go (1 pt to last player)
+  const prevScoresGo = { ...nextScores }
   nextScores[playerId] = (nextScores[playerId] ?? 0) + 1
   if (nextScores[playerId] >= TARGET_SCORE) {
     return {
       ...tempRound,
       scores: nextScores,
+      previousScores: prevScoresGo,
       winnerId: playerId,
       phase: 'summary',
       lastLog: `${desc}. Go for 1! ${hand.name} reached ${TARGET_SCORE} points and won!`,
@@ -357,6 +377,7 @@ export function playCard(round: Round, playerId: string, card: Card): Round {
   return {
     ...tempRound,
     scores: nextScores,
+    previousScores: prevScoresGo,
     currentCount: 0,
     playSequence: [],
     lastPlayerId: null,
@@ -372,6 +393,7 @@ export function advanceShow(round: Round): Round {
 
   const nonDealerHand = round.hands.find(h => h.playerId === round.nonDealerId)!
   const dealerHand = round.hands.find(h => h.playerId === round.dealerId)!
+  const prevScores = { ...round.scores }
   const nextScores = { ...round.scores }
 
   if (round.showStep === 'nonDealer') {
@@ -382,6 +404,7 @@ export function advanceShow(round: Round): Round {
       return {
         ...round,
         scores: nextScores,
+        previousScores: prevScores,
         winnerId: round.nonDealerId,
         phase: 'summary',
         showStep: 'complete',
@@ -392,6 +415,7 @@ export function advanceShow(round: Round): Round {
     return {
       ...round,
       scores: nextScores,
+      previousScores: prevScores,
       showStep: 'dealer',
       lastLog: `${nonDealerHand.name}'s hand scored ${scored.totalPoints} pts.`,
     }
@@ -405,6 +429,7 @@ export function advanceShow(round: Round): Round {
       return {
         ...round,
         scores: nextScores,
+        previousScores: prevScores,
         winnerId: round.dealerId,
         phase: 'summary',
         showStep: 'complete',
@@ -415,6 +440,7 @@ export function advanceShow(round: Round): Round {
     return {
       ...round,
       scores: nextScores,
+      previousScores: prevScores,
       showStep: 'crib',
       lastLog: `${dealerHand.name}'s hand scored ${scored.totalPoints} pts.`,
     }
@@ -428,6 +454,7 @@ export function advanceShow(round: Round): Round {
       return {
         ...round,
         scores: nextScores,
+        previousScores: prevScores,
         winnerId: round.dealerId,
         phase: 'summary',
         showStep: 'complete',
@@ -438,6 +465,7 @@ export function advanceShow(round: Round): Round {
     return {
       ...round,
       scores: nextScores,
+      previousScores: prevScores,
       phase: 'summary',
       showStep: 'complete',
       lastLog: `${dealerHand.name}'s crib scored ${scored.totalPoints} pts. Hand complete!`,

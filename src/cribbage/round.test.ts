@@ -59,6 +59,8 @@ describe('Cribbage round state and logic', () => {
     round = playCard(round, 'p2', p2Card)
     expect(round.currentCount).toBeGreaterThan(0)
     expect(round.hands[1].played.length).toBe(1)
+    expect(round.lastPlayedCard).toEqual(p2Card)
+    expect(round.lastPlayedBy).toBe('p2')
   })
 
   it('advances through the show phase step by step', () => {
