@@ -131,7 +131,6 @@ function SeatPanel({
   const isTurn = round.turn === hand.playerId
   const isDiscarding = round.phase === 'discard' && hand.discards.length === 0
   const isPlaying = round.phase === 'play' && isTurn
-  const score = round.scores[hand.playerId] ?? 0
 
   const remaining = unplayedCards(hand)
   const canPlayAny = isPlaying && canPlayAnyCard(round, hand.playerId)
@@ -167,15 +166,15 @@ function SeatPanel({
     <section className={`seat-panel${isPlaying ? ' seat-panel--active' : ''}`}>
       <header className="seat-panel-header">
         <h2>
-          {hand.name} {isDealer && <span className="meld-label">(Dealer)</span>}
+          {hand.name}
+          {isDealer && <span className="dealer-tag">(Dealer)</span>}
         </h2>
         <span className="seat-panel-status">{statusText}</span>
-        <span className="seat-panel-score">{score} / {TARGET_SCORE} pts</span>
       </header>
 
       {visible ? (
         <HandCards
-          cards={round.phase === 'discard' ? hand.dealt : remaining}
+          cards={round.phase === 'discard' ? hand.hand : remaining}
           selectedKeys={selectedKeySet}
           onSelect={card => {
             if (isDiscarding) {
@@ -188,7 +187,7 @@ function SeatPanel({
           interactive={isDiscarding || isPlaying}
         />
       ) : (
-        <HiddenHand count={round.phase === 'discard' ? hand.dealt.length - hand.discards.length : remaining.length} />
+        <HiddenHand count={round.phase === 'discard' ? hand.hand.length : remaining.length} />
       )}
 
       <div className="panel-actions">
@@ -394,13 +393,7 @@ export default function Cribbage({ players, onExit }: CribbageProps) {
 
         {/* Player seats and controls on the right */}
         <div className="cribbage-right-side">
-          <RotatedSeat degrees={90}>{panelFor(left)}</RotatedSeat>
-
-          <div className="cribbage-centre">
-            <button type="button" className="btn-ghost" onClick={onExit}>
-              Exit
-            </button>
-
+          <div className="cribbage-top-bar">
             <div className="piles">
               <div className="pile">
                 <span className="pile-label">Starter</span>
@@ -441,16 +434,25 @@ export default function Cribbage({ players, onExit }: CribbageProps) {
               )}
             </div>
 
-            {setupNeeded ? (
-              <button type="button" className="btn-secondary" onClick={enable}>
-                Tilt setup
+            <div className="cribbage-controls">
+              {setupNeeded ? (
+                <button type="button" className="btn-secondary" onClick={enable}>
+                  Tilt setup
+                </button>
+              ) : (
+                !portrait && <span className="pile-label">Turn upright</span>
+              )}
+
+              <button type="button" className="btn-ghost" onClick={onExit}>
+                Exit
               </button>
-            ) : (
-              !portrait && <span className="pile-label">Turn upright</span>
-            )}
+            </div>
           </div>
 
-          <RotatedSeat degrees={-90}>{panelFor(right)}</RotatedSeat>
+          <div className="cribbage-seats">
+            <RotatedSeat degrees={90}>{panelFor(left)}</RotatedSeat>
+            <RotatedSeat degrees={-90}>{panelFor(right)}</RotatedSeat>
+          </div>
         </div>
       </div>
     </main>
