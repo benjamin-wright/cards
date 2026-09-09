@@ -111,7 +111,6 @@ function SeatPanel({
   onConfirmDiscard,
   onPlayCard,
   onPassGo,
-  onAdvanceShow,
   onDealNextHand,
   onNewGame,
 }: {
@@ -125,7 +124,6 @@ function SeatPanel({
   onConfirmDiscard: () => void
   onPlayCard: (card: Card) => void
   onPassGo: () => void
-  onAdvanceShow: () => void
   onDealNextHand: () => void
   onNewGame: () => void
 }) {
@@ -156,13 +154,6 @@ function SeatPanel({
   } else if (round.phase === 'discard') {
     statusText = hand.discards.length === 0 ? 'Pick 2 discards' : 'Ready'
   }
-
-  const scoredHand =
-    round.phase === 'show' || round.phase === 'summary'
-      ? round.starter
-        ? scoreHand(hand.hand, round.starter, false)
-        : null
-      : null
 
   return (
     <section className={`seat-panel${isPlaying ? ' seat-panel--active' : ''}`}>
@@ -216,16 +207,6 @@ function SeatPanel({
           </button>
         )}
 
-        {round.phase === 'show' && (
-          <button type="button" className="btn-primary" onClick={onAdvanceShow}>
-            {round.showStep === 'nonDealer'
-              ? `Score ${round.hands.find(h => h.playerId === round.nonDealerId)?.name}'s Hand`
-              : round.showStep === 'dealer'
-                ? `Score ${round.hands.find(h => h.playerId === round.dealerId)?.name}'s Hand`
-                : 'Score Crib'}
-          </button>
-        )}
-
         {round.phase === 'summary' && (
           <button
             type="button"
@@ -236,12 +217,6 @@ function SeatPanel({
           </button>
         )}
       </div>
-
-      {scoredHand !== null && (round.phase === 'show' || round.phase === 'summary') && (
-        <div className="hint">
-          Hand details: {scoredHand.details.length > 0 ? scoredHand.details.map(d => d.description).join(', ') : 'No points'} ({scoredHand.totalPoints} pts)
-        </div>
-      )}
     </section>
   )
 }
@@ -268,7 +243,6 @@ export default function Cribbage({ players, onExit }: CribbageProps) {
 
   const [revealed, setRevealed] = useState<string[]>([])
   const [selectedCards, setSelectedCards] = useState<Card[]>([])
-  const [scoringPopup, setScoringPopup] = useState<ShowStep | null>(null)
 
   const { round } = state
 
@@ -288,6 +262,8 @@ export default function Cribbage({ players, onExit }: CribbageProps) {
   }
 
   const setRound = (next: Round) => setState(current => ({ ...current, round: next }))
+
+  const scoringPopup: ShowStep | null = round.phase === 'show' ? round.showStep : null
 
   const handleSelectCard = (card: Card) => {
     setSelectedCards(current => {
@@ -318,17 +294,11 @@ export default function Cribbage({ players, onExit }: CribbageProps) {
   const handleAdvanceShow = () => {
     const next = advanceShow(round)
     setRound(next)
-    setScoringPopup(null)
-  }
-
-  const handleOpenScorePopup = () => {
-    setScoringPopup(round.showStep)
   }
 
   const handleDealNextHand = () => {
     setSelectedCards([])
     setRevealed([])
-    setScoringPopup(null)
     const nextDealerId = round.nonDealerId
     setState(current => ({
       round: createRound(players, nextDealerId, current.round?.scores),
@@ -339,7 +309,6 @@ export default function Cribbage({ players, onExit }: CribbageProps) {
   const handleNewGame = () => {
     setSelectedCards([])
     setRevealed([])
-    setScoringPopup(null)
     setState({
       round: createRound(players, players[0]?.id),
       lastStarterId: players[0]?.id ?? null,
@@ -398,7 +367,6 @@ export default function Cribbage({ players, onExit }: CribbageProps) {
       onConfirmDiscard={() => handleConfirmDiscard(hand.playerId)}
       onPlayCard={card => handlePlayCard(hand.playerId, card)}
       onPassGo={() => {}}
-      onAdvanceShow={handleOpenScorePopup}
       onDealNextHand={handleDealNextHand}
       onNewGame={handleNewGame}
     />
