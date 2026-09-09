@@ -3,6 +3,7 @@ import PlayerSetup from './views/PlayerSetup'
 import Blackjack from './blackjack/Blackjack'
 import Rummy from './rummy/Rummy'
 import Cribbage from './cribbage/Cribbage'
+import CrazyEights from './crazyeights/CrazyEights'
 import type { Result } from './blackjack/round'
 import { games } from './games'
 import { isPlayerList, type Player } from './players'
@@ -49,6 +50,7 @@ function App() {
     clearState(STORAGE_KEYS.blackjack)
     clearState(STORAGE_KEYS.rummy)
     clearState(STORAGE_KEYS.cribbage)
+    clearState(STORAGE_KEYS.crazyEights)
   }
 
   /** Leaving a game abandons the hand in progress. */
@@ -87,6 +89,8 @@ function App() {
         <Rummy players={players} onExit={leaveGame} />
       ) : game.id === 'cribbage' ? (
         <Cribbage players={players} onExit={leaveGame} />
+      ) : game.id === 'crazy-eights' ? (
+        <CrazyEights players={players} onExit={leaveGame} />
       ) : (
         <main className="view-game-placeholder">
           <h2>{game.name}</h2>
