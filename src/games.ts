@@ -44,10 +44,10 @@ export const games: Game[] = [
     name: 'Cribbage',
     description: 'Peg your way to 121 with fifteens, runs and pairs.',
     minPlayers: 2,
-    maxPlayers: 3,
+    maxPlayers: 2,
     rank: 'Q',
     suit: 'diamonds',
-    available: false,
+    available: true,
   },
   {
     id: 'hearts',

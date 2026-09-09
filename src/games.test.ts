@@ -29,6 +29,15 @@ describe('games', () => {
     expect(isPlayable(blackjack, 3)).toBe(false)
   })
 
+  it('offers cribbage for exactly two players', () => {
+    const cribbage = games.find(game => game.id === 'cribbage')!
+    expect(cribbage.available).toBe(true)
+    expect(playerCountLabel(cribbage)).toBe('2 players')
+    expect(isPlayable(cribbage, 1)).toBe(false)
+    expect(isPlayable(cribbage, 2)).toBe(true)
+    expect(isPlayable(cribbage, 3)).toBe(false)
+  })
+
   it('never marks unavailable games as playable', () => {
     for (const game of games.filter(entry => !entry.available)) {
       expect(supportsPlayerCount(game, game.minPlayers)).toBe(true)

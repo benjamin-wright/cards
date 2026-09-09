@@ -2,6 +2,7 @@ import GameSelect from './views/GameSelect'
 import PlayerSetup from './views/PlayerSetup'
 import Blackjack from './blackjack/Blackjack'
 import Rummy from './rummy/Rummy'
+import Cribbage from './cribbage/Cribbage'
 import type { Result } from './blackjack/round'
 import { games } from './games'
 import { isPlayerList, type Player } from './players'
@@ -47,6 +48,7 @@ function App() {
   const clearGames = () => {
     clearState(STORAGE_KEYS.blackjack)
     clearState(STORAGE_KEYS.rummy)
+    clearState(STORAGE_KEYS.cribbage)
   }
 
   /** Leaving a game abandons the hand in progress. */
@@ -83,6 +85,8 @@ function App() {
         <Blackjack players={players} onSettle={settle} onExit={leaveGame} />
       ) : game.id === 'rummy' ? (
         <Rummy players={players} onExit={leaveGame} />
+      ) : game.id === 'cribbage' ? (
+        <Cribbage players={players} onExit={leaveGame} />
       ) : (
         <main className="view-game-placeholder">
           <h2>{game.name}</h2>

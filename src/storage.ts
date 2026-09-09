@@ -6,6 +6,7 @@ export const STORAGE_KEYS = {
   app: 'app',
   blackjack: 'blackjack',
   rummy: 'rummy',
+  cribbage: 'cribbage',
 } as const
 
 function storage(): Storage | null {
