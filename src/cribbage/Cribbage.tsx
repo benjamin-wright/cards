@@ -7,6 +7,7 @@ import { STORAGE_KEYS, usePersistentState } from '../storage'
 import CardFace from '../views/CardFace'
 import RotatedSeat from '../views/RotatedSeat'
 import CribbageBoard from './CribbageBoard'
+import ScorePopup from './ScorePopup'
 import {
   TARGET_SCORE,
   advanceShow,
@@ -18,6 +19,7 @@ import {
   unplayedCards,
   type HandState,
   type Round,
+  type ShowStep,
 } from './round'
 import { cardValue, scoreHand } from './scoring'
 
@@ -109,7 +111,6 @@ function SeatPanel({
   onConfirmDiscard,
   onPlayCard,
   onPassGo,
-  onAdvanceShow,
   onDealNextHand,
   onNewGame,
 }: {
@@ -123,7 +124,6 @@ function SeatPanel({
   onConfirmDiscard: () => void
   onPlayCard: (card: Card) => void
   onPassGo: () => void
-  onAdvanceShow: () => void
   onDealNextHand: () => void
   onNewGame: () => void
 }) {
@@ -154,13 +154,6 @@ function SeatPanel({
   } else if (round.phase === 'discard') {
     statusText = hand.discards.length === 0 ? 'Pick 2 discards' : 'Ready'
   }
-
-  const scoredHand =
-    round.phase === 'show' || round.phase === 'summary'
-      ? round.starter
-        ? scoreHand(hand.hand, round.starter, false)
-        : null
-      : null
 
   return (
     <section className={`seat-panel${isPlaying ? ' seat-panel--active' : ''}`}>
@@ -214,16 +207,6 @@ function SeatPanel({
           </button>
         )}
 
-        {round.phase === 'show' && (
-          <button type="button" className="btn-primary" onClick={onAdvanceShow}>
-            {round.showStep === 'nonDealer'
-              ? `Score ${round.hands.find(h => h.playerId === round.nonDealerId)?.name}'s Hand`
-              : round.showStep === 'dealer'
-                ? `Score ${round.hands.find(h => h.playerId === round.dealerId)?.name}'s Hand`
-                : 'Score Crib'}
-          </button>
-        )}
-
         {round.phase === 'summary' && (
           <button
             type="button"
@@ -234,12 +217,6 @@ function SeatPanel({
           </button>
         )}
       </div>
-
-      {scoredHand !== null && (round.phase === 'show' || round.phase === 'summary') && (
-        <div className="hint">
-          Hand details: {scoredHand.details.length > 0 ? scoredHand.details.map(d => d.description).join(', ') : 'No points'} ({scoredHand.totalPoints} pts)
-        </div>
-      )}
     </section>
   )
 }
@@ -285,6 +262,8 @@ export default function Cribbage({ players, onExit }: CribbageProps) {
   }
 
   const setRound = (next: Round) => setState(current => ({ ...current, round: next }))
+
+  const scoringPopup: ShowStep | null = round.phase === 'show' ? round.showStep : null
 
   const handleSelectCard = (card: Card) => {
     setSelectedCards(current => {
@@ -355,6 +334,27 @@ export default function Cribbage({ players, onExit }: CribbageProps) {
     )
   }
 
+  const scorePopupContent =
+    scoringPopup !== null && round.starter !== null
+      ? scoringPopup === 'nonDealer'
+        ? {
+            title: `${round.hands.find(h => h.playerId === round.nonDealerId)?.name}'s Hand`,
+            hand: round.hands.find(h => h.playerId === round.nonDealerId)!.hand,
+            result: scoreHand(round.hands.find(h => h.playerId === round.nonDealerId)!.hand, round.starter, false),
+          }
+        : scoringPopup === 'dealer'
+          ? {
+              title: `${round.hands.find(h => h.playerId === round.dealerId)?.name}'s Hand`,
+              hand: round.hands.find(h => h.playerId === round.dealerId)!.hand,
+              result: scoreHand(round.hands.find(h => h.playerId === round.dealerId)!.hand, round.starter, false),
+            }
+          : {
+              title: 'The Crib',
+              hand: round.crib,
+              result: scoreHand(round.crib, round.starter, true),
+            }
+      : null
+
   const panelFor = (hand: HandState) => (
     <SeatPanel
       hand={hand}
@@ -367,7 +367,6 @@ export default function Cribbage({ players, onExit }: CribbageProps) {
       onConfirmDiscard={() => handleConfirmDiscard(hand.playerId)}
       onPlayCard={card => handlePlayCard(hand.playerId, card)}
       onPassGo={() => {}}
-      onAdvanceShow={handleAdvanceShow}
       onDealNextHand={handleDealNextHand}
       onNewGame={handleNewGame}
     />
@@ -463,6 +462,17 @@ export default function Cribbage({ players, onExit }: CribbageProps) {
           </div>
         </div>
       </div>
+
+      {scorePopupContent !== null && round.starter !== null && (
+        <ScorePopup
+          title={scorePopupContent.title}
+          starter={round.starter}
+          hand={scorePopupContent.hand}
+          result={scorePopupContent.result}
+          onContinue={handleAdvanceShow}
+          continueLabel={scoringPopup === 'crib' ? 'Finish' : 'Continue'}
+        />
+      )}
     </main>
   )
 }

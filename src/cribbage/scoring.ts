@@ -5,6 +5,8 @@ export type ScoreDetail = {
   kind: 'fifteen' | 'pair' | 'run' | 'flush' | 'nobs'
   points: number
   description: string
+  /** The card(s) involved in each scoring combination for this item, for visualisation. */
+  cardGroups: Card[][]
 }
 
 export type HandScoreResult = {
@@ -46,42 +48,44 @@ export function scoreHand(handCards: Card[], starter: Card, isCrib: boolean): Ha
   let totalPoints = 0
 
   // 1. Fifteens
-  let fifteenCount = 0
+  const fifteenGroups: Card[][] = []
   for (let size = 2; size <= 5; size += 1) {
     for (const comb of combinations(allCards, size)) {
       const sum = comb.reduce((acc, card) => acc + cardValue(card), 0)
       if (sum === 15) {
-        fifteenCount += 1
+        fifteenGroups.push(comb)
       }
     }
   }
-  if (fifteenCount > 0) {
-    const pts = fifteenCount * 2
+  if (fifteenGroups.length > 0) {
+    const pts = fifteenGroups.length * 2
     totalPoints += pts
     details.push({
       kind: 'fifteen',
       points: pts,
-      description: `${fifteenCount} fifteen${fifteenCount > 1 ? 's' : ''} (${pts} pts)`,
+      description: `${fifteenGroups.length} fifteen${fifteenGroups.length > 1 ? 's' : ''} (${pts} pts)`,
+      cardGroups: fifteenGroups,
     })
   }
 
   // 2. Pairs
-  let pairCount = 0
+  const pairGroups: Card[][] = []
   for (const comb of combinations(allCards, 2)) {
     if (comb[0].rank === comb[1].rank) {
-      pairCount += 1
+      pairGroups.push(comb)
     }
   }
-  if (pairCount > 0) {
-    const pts = pairCount * 2
+  if (pairGroups.length > 0) {
+    const pts = pairGroups.length * 2
     totalPoints += pts
-    let desc = `${pairCount} pair${pairCount > 1 ? 's' : ''} (${pts} pts)`
-    if (pairCount === 3) desc = `3 of a kind (${pts} pts)`
-    if (pairCount === 6) desc = `4 of a kind (${pts} pts)`
+    let desc = `${pairGroups.length} pair${pairGroups.length > 1 ? 's' : ''} (${pts} pts)`
+    if (pairGroups.length === 3) desc = `3 of a kind (${pts} pts)`
+    if (pairGroups.length === 6) desc = `4 of a kind (${pts} pts)`
     details.push({
       kind: 'pair',
       points: pts,
       description: desc,
+      cardGroups: pairGroups,
     })
   }
 
@@ -95,6 +99,7 @@ export function scoreHand(handCards: Card[], starter: Card, isCrib: boolean): Ha
         kind: 'run',
         points: pts,
         description: `${validRuns.length} run${validRuns.length > 1 ? 's' : ''} of ${len} (${pts} pts)`,
+        cardGroups: validRuns.map(run => [...run].sort((a, b) => rankOrder(a.rank) - rankOrder(b.rank))),
       })
       break
     }
@@ -109,6 +114,7 @@ export function scoreHand(handCards: Card[], starter: Card, isCrib: boolean): Ha
         kind: 'flush',
         points: 5,
         description: '5-card crib flush (5 pts)',
+        cardGroups: [allCards],
       })
     }
   } else if (handCards.length === 4) {
@@ -121,18 +127,20 @@ export function scoreHand(handCards: Card[], starter: Card, isCrib: boolean): Ha
         kind: 'flush',
         points: pts,
         description: `${pts}-card flush (${pts} pts)`,
+        cardGroups: [starterMatches ? allCards : handCards],
       })
     }
   }
 
   // 5. His Nobs
-  const hasNobs = handCards.some(c => c.rank === 'J' && c.suit === starter.suit)
-  if (hasNobs) {
+  const nobsCard = handCards.find(c => c.rank === 'J' && c.suit === starter.suit)
+  if (nobsCard !== undefined) {
     totalPoints += 1
     details.push({
       kind: 'nobs',
       points: 1,
       description: 'His Nobs (1 pt)',
+      cardGroups: [[nobsCard, starter]],
     })
   }
 
