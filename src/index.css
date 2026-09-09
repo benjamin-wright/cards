@@ -932,7 +932,7 @@ button.hand-card:not(:disabled):hover {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   padding: 8px;
   background: rgba(0, 0, 0, 0.22);
   border-right: 1px solid rgba(255, 255, 255, 0.1);
@@ -941,16 +941,56 @@ button.hand-card:not(:disabled):hover {
   overflow: hidden;
 }
 
+.cribbage-revealed-section {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+  max-width: 320px;
+  padding: 8px 10px;
+  background: rgba(0, 0, 0, 0.25);
+  border-radius: var(--radius);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  flex-shrink: 0;
+}
+
+.cribbage-player-revealed {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.cribbage-revealed-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.9);
+  max-width: 85px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cribbage-revealed-cards {
+  display: flex;
+  gap: 4px;
+}
+
+.cribbage-revealed-cards .hand-card {
+  width: 34px;
+}
+
 .cribbage-board-wrapper {
   width: 100%;
-  height: 100%;
+  flex: 1;
   max-width: 320px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-end;
   min-height: 0;
   min-width: 0;
+  margin-top: 6px;
 }
 
 .cribbage-board-svg {
@@ -1081,12 +1121,6 @@ button.hand-card:not(:disabled):hover {
 
 .view-cribbage .seat-panel .hand-card {
   width: 40px;
-}
-
-.pile--last-played {
-  border-left: 1px solid rgba(255, 255, 255, 0.2);
-  border-right: 1px solid rgba(255, 255, 255, 0.2);
-  padding: 0 8px;
 }
 
 @media (max-width: 600px) {

@@ -378,8 +378,26 @@ export default function Cribbage({ players, onExit }: CribbageProps) {
   return (
     <main className="view-cribbage view-cribbage--table">
       <div className="cribbage-table">
-        {/* Dynamic Cribbage Board on the left */}
+        {/* Dynamic Cribbage Board and revealed cards on the left */}
         <div className="cribbage-board-container">
+          <div className="cribbage-revealed-section">
+            {round.hands.map(hand => (
+              <div key={hand.playerId} className="cribbage-player-revealed">
+                <span className="cribbage-revealed-label">{hand.name}</span>
+                <div className="cribbage-revealed-cards">
+                  {Array.from({ length: 4 }, (_, index) => {
+                    const card = hand.played[index]
+                    return card ? (
+                      <CardFace key={cardKey(card)} card={card} />
+                    ) : (
+                      <span key={index} className="hand-card hand-card--empty" aria-label="Card not revealed" />
+                    )
+                  })}
+                </div>
+              </div>
+            ))}
+          </div>
+
           <CribbageBoard
             player1Name={left.name}
             player2Name={right.name}
@@ -401,16 +419,6 @@ export default function Cribbage({ players, onExit }: CribbageProps) {
                   <CardFace faceDown />
                 ) : (
                   <CardFace card={round.starter} />
-                )}
-              </div>
-
-              {/* Graphical representation of the last card played */}
-              <div className="pile pile--last-played">
-                <span className="pile-label">Last Played</span>
-                {round.lastPlayedCard ? (
-                  <CardFace card={round.lastPlayedCard} highlighted />
-                ) : (
-                  <span className="hand-card hand-card--empty" aria-label="No card played yet" />
                 )}
               </div>
 
