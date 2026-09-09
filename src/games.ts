@@ -50,6 +50,16 @@ export const games: Game[] = [
     available: true,
   },
   {
+    id: 'crazy-eights',
+    name: 'Crazy Eights',
+    description: 'Match suit or rank to go out first — eights change suit, tens are see-through, jacks skip, twos pile up.',
+    minPlayers: 2,
+    maxPlayers: 2,
+    rank: '8',
+    suit: 'clubs',
+    available: true,
+  },
+  {
     id: 'hearts',
     name: 'Hearts',
     description: 'Avoid the hearts and the queen of spades, or shoot the moon.',
