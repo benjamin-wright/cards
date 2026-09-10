@@ -4,6 +4,12 @@ export type Player = {
   cash: number
 }
 
+/** What a game hands back when a wager is settled: the cash each player ends on. */
+export type Settlement = {
+  playerId: string
+  cashAfter: number
+}
+
 /** The app always seats exactly two players, facing each other across the device. */
 export const MIN_PLAYERS = 2
 export const MAX_PLAYERS = 2

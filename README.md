@@ -68,6 +68,27 @@ back to its own "Show cards" / "Hide cards" toggle, and cards go back face down
 as soon as the turn passes on. Reveals are never stored, so a refresh always
 comes back with hands face down.
 
+### Roulette
+
+Single-zero roulette for the same two players, staked from the shared cash
+pile. Players take it in turns to place their chips on one shared board —
+straight up numbers (35 to 1), the three column and dozen bets (2 to 1) and the
+even money red/black, odd/even and high/low bets. Tap a spot to add the
+selected £1, £5 or £10 chip, press and hold a spot to take that stake back off,
+or use "Clear" to lift the lot. Nobody can stake more than the cash they hold.
+
+The page is pinned to portrait like the other table games, and the board is
+turned a quarter turn so it reads as a landscape betting layout facing whoever
+is betting. Where tilt is available, the board only accepts chips while the
+device is angled towards the player whose turn it is; without it the board is
+always live for the player named at the top.
+
+Once both players have finished, the screen switches to the wheel: it spins for
+a few seconds with both players' bets listed underneath, then a pop-up shows
+every bet, what it won or lost, and each player's new total. The winning pocket
+is chosen as the wheel starts turning, so refreshing mid-spin settles on the
+same number.
+
 ## Development
 
 ```bash

@@ -1228,3 +1228,304 @@ button.hand-card:not(:disabled):hover {
   font-weight: 700;
   font-size: 1.1rem;
 }
+
+/* ─── Roulette ──────────────────────────────────────────────── */
+.view-roulette {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding: 24px 16px;
+}
+
+/* Like the rummy table, the page stays pinned to portrait and the board is
+   turned a quarter turn instead, giving a landscape betting layout that faces
+   whichever player is placing their chips. */
+.view-roulette--table {
+  align-items: stretch;
+  padding: 0;
+  gap: 0;
+  min-height: 0;
+}
+
+.roulette-table {
+  flex: 1;
+  display: grid;
+  grid-template-rows: 1fr auto;
+  width: 100%;
+  min-height: 0;
+}
+
+.roulette-seat {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+}
+
+.roulette-seat-header {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.roulette-seat-header h2 {
+  font-size: 1rem;
+  color: var(--surface);
+}
+
+.roulette-seat-header .seat-panel-status {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.roulette-seat-header .btn-primary,
+.roulette-seat-header .btn-secondary {
+  padding: 4px 12px;
+  font-size: 0.8rem;
+}
+
+.roulette-seat .hint {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.7rem;
+}
+
+.roulette-board {
+  display: grid;
+  grid-template-columns: 0.7fr repeat(12, 1fr) 1.1fr;
+  grid-template-rows: repeat(3, 1fr) 0.9fr 0.9fr;
+  gap: 2px;
+  width: 100%;
+  aspect-ratio: 5 / 2;
+  max-height: 100%;
+}
+
+.board-spot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  min-width: 0;
+  padding: 0;
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  border-radius: 3px;
+  color: var(--surface);
+  background: rgba(255, 255, 255, 0.08);
+  font-size: clamp(0.5rem, 1.6vh, 0.85rem);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.board-spot:disabled {
+  cursor: default;
+  opacity: 0.75;
+}
+
+.board-spot.colour-red {
+  background: var(--red);
+}
+
+.board-spot.colour-black {
+  background: var(--black);
+}
+
+.board-spot.colour-green {
+  background: var(--accent);
+}
+
+.board-spot--outside {
+  font-size: clamp(0.45rem, 1.3vh, 0.75rem);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.board-spot--winner {
+  box-shadow: 0 0 0 2px #f2c14e;
+}
+
+.board-spot-label {
+  pointer-events: none;
+}
+
+.bet-chips {
+  position: absolute;
+  right: 1px;
+  bottom: 1px;
+  display: flex;
+  gap: 1px;
+  pointer-events: none;
+}
+
+.bet-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 14px;
+  height: 14px;
+  padding: 0 2px;
+  border-radius: 50%;
+  font-size: 0.55rem;
+  font-weight: 700;
+  color: var(--text-strong);
+  border: 1px solid rgba(0, 0, 0, 0.35);
+}
+
+.bet-chip--seat-1 {
+  background: #f2c14e;
+}
+
+.bet-chip--seat-2 {
+  background: #7ec8e3;
+}
+
+.bet-chip-button {
+  min-width: 40px;
+  padding: 4px 8px;
+  border-radius: 999px;
+  border: 2px solid rgba(255, 255, 255, 0.6);
+  background: var(--surface-raised);
+  color: var(--text-strong);
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.bet-chip-button--selected {
+  border-color: #f2c14e;
+  background: #f2c14e;
+}
+
+.bet-chip-button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+/* ─── Roulette spinner ──────────────────────────────────────── */
+.view-roulette--spin {
+  justify-content: flex-start;
+}
+
+.roulette-wheel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+}
+
+.roulette-wheel-svg {
+  width: min(80vw, 60vh);
+  height: auto;
+}
+
+.wheel-rim {
+  fill: #2a2233;
+}
+
+.wheel-face {
+  transform-origin: 50% 50%;
+}
+
+.wheel-pocket {
+  stroke: rgba(255, 255, 255, 0.25);
+  stroke-width: 0.4;
+}
+
+.wheel-pocket.colour-red {
+  fill: var(--red);
+}
+
+.wheel-pocket.colour-black {
+  fill: var(--black);
+}
+
+.wheel-pocket.colour-green {
+  fill: var(--accent);
+}
+
+.wheel-number {
+  fill: var(--surface);
+  font-size: 7px;
+  font-weight: 700;
+}
+
+.wheel-hub {
+  fill: #2a2233;
+  stroke: rgba(255, 255, 255, 0.3);
+}
+
+.wheel-marker {
+  fill: #f2c14e;
+}
+
+.roulette-wheel-result {
+  min-height: 32px;
+}
+
+.roulette-result {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 32px;
+  padding: 2px 8px;
+  border-radius: 6px;
+  color: var(--surface);
+  font-weight: 700;
+}
+
+.roulette-result.colour-red {
+  background: var(--red);
+}
+
+.roulette-result.colour-black {
+  background: var(--black);
+}
+
+.roulette-result.colour-green {
+  background: var(--accent);
+}
+
+.roulette-bet-summary {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+  padding: 8px;
+  background: rgba(0, 0, 0, 0.22);
+}
+
+.roulette-bet-summary-seat {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px;
+  background: var(--surface);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+
+.roulette-summary-bets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.roulette-summary-bet {
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: var(--surface-raised);
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+
+.roulette-summary-bet--won {
+  background: var(--accent-bg);
+  color: var(--accent);
+}
+
+.score-popup-item-points--loss {
+  color: var(--red);
+}

@@ -60,14 +60,14 @@ export const games: Game[] = [
     available: true,
   },
   {
-    id: 'hearts',
-    name: 'Hearts',
-    description: 'Avoid the hearts and the queen of spades, or shoot the moon.',
-    minPlayers: 4,
-    maxPlayers: 4,
+    id: 'roulette',
+    name: 'Roulette',
+    description: 'Back your numbers with £1, £5 and £10 chips, then spin the wheel.',
+    minPlayers: 2,
+    maxPlayers: 2,
     rank: 'J',
-    suit: 'clubs',
-    available: false,
+    suit: 'hearts',
+    available: true,
   },
 ]
 
