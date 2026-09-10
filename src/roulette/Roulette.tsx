@@ -111,14 +111,27 @@ export default function Roulette({ players, onSettle, onExit }: RouletteProps) {
     }
   }, [round.phase, results, onSettle])
 
-  if (players.some(player => player.cash < MIN_STAKE)) {
+  // Everyone needs to be able to cover the smallest chip for another spin.
+  // The check waits until the betting phase so the summary of the spin that
+  // cleaned somebody out is still shown, final balances and all.
+  const canPlayAgain = players.every(player => player.cash >= MIN_STAKE)
+
+  if (round.phase === 'betting' && !canPlayAgain) {
     return (
       <main className="view-roulette">
         <GameBar onExit={onExit} />
         <header className="panel-header">
-          <h1>Not enough cash</h1>
+          <h1>Out of cash</h1>
           <p className="tagline">Both players need at least £{MIN_STAKE} to place a bet.</p>
         </header>
+        <ul className="player-chips">
+          {players.map(player => (
+            <li key={player.id} className="player-chip">
+              <span className="player-chip-name">{player.name}</span>
+              <span className="player-chip-cash">£{player.cash}</span>
+            </li>
+          ))}
+        </ul>
         <div className="panel-actions">
           <button type="button" className="btn-primary" onClick={onExit}>
             Back to games
@@ -146,7 +159,7 @@ export default function Roulette({ players, onSettle, onExit }: RouletteProps) {
           <SpinSummary
             pocket={round.pocket}
             results={results}
-            onNext={() => setRound(nextRound(round, players))}
+            onNext={canPlayAgain ? () => setRound(nextRound(round, players)) : null}
             onExit={onExit}
           />
         )}

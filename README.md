@@ -89,6 +89,10 @@ every bet, what it won or lost, and each player's new total. The winning pocket
 is chosen as the wheel starts turning, so refreshing mid-spin settles on the
 same number.
 
+If a spin leaves either player short of the £1 minimum, that summary is still
+shown with the final balances — it just drops the "Next spin" button, since
+there's nothing left to bet with.
+
 ## Development
 
 ```bash

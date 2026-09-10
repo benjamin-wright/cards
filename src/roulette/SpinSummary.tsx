@@ -4,7 +4,8 @@ import { colourOf } from './wheel'
 type SpinSummaryProps = {
   pocket: number
   results: Result[]
-  onNext: () => void
+  /** Null when nobody can cover another spin, leaving the final balances. */
+  onNext: (() => void) | null
   onExit: () => void
 }
 
@@ -50,13 +51,17 @@ export default function SpinSummary({ pocket, results, onNext, onExit }: SpinSum
           ))}
         </div>
 
+        {onNext === null && <p className="hint">Nobody can cover another bet — those are the final totals.</p>}
+
         <footer className="score-popup-footer">
           <button type="button" className="btn-secondary" onClick={onExit}>
             Back to games
           </button>
-          <button type="button" className="btn-primary" onClick={onNext}>
-            Next spin
-          </button>
+          {onNext !== null && (
+            <button type="button" className="btn-primary" onClick={onNext}>
+              Next spin
+            </button>
+          )}
         </footer>
       </div>
     </div>
