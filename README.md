@@ -84,8 +84,10 @@ betting spots left slightly see-through so it shows through them. Where tilt is 
 device is angled towards the player whose turn it is; without it the board is
 always live for the player named at the top.
 
-Once both players have finished, the screen switches to the wheel, with both
-players' bets listed underneath. The wheel itself turns at a slow, constant
+Once both players have finished, the board fades away and the bets are listed
+underneath the wheel. The same wheel is used at the same size throughout and is
+never remounted, so the switch is only the board fading out and the blur over
+the wheel lifting — nothing slides or resizes. The wheel itself turns at a slow, constant
 crawl and is never stopped; the ball is thrown in the other direction along an
 entry tangent, runs a couple of circuits of the outer groove under a constant
 deceleration, then falls into the pockets on a parabola as it comes down to the

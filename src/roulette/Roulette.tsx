@@ -5,11 +5,11 @@ import { STORAGE_KEYS, usePersistentState } from '../storage'
 import RotatedSeat from '../views/RotatedSeat'
 import BettingBoard, { type BoardStake } from './BettingBoard'
 import SpinSummary from './SpinSummary'
-import Wheel, { WheelFace } from './Wheel'
+import Wheel from './Wheel'
 import { SPIN_MS } from './spin'
 import { CHIPS, betSpot } from './bets'
+import { colourOf } from './wheel'
 import {
-  activeSeat,
   clearBets,
   createRound,
   endTurn,
@@ -149,122 +149,133 @@ export default function Roulette({ players, onSettle, onExit }: RouletteProps) {
     }
   })
 
-  if (round.phase !== 'betting') {
-    return (
-      <main className="view-roulette view-roulette--spin">
-        <GameBar onExit={onExit} />
-        <Wheel pocket={round.pocket} spinning={round.phase === 'spinning'} />
-        <BetSummary seats={round.seats} />
-
-        {round.phase === 'summary' && results !== null && round.pocket !== null && (
-          <SpinSummary
-            pocket={round.pocket}
-            results={results}
-            onNext={canPlayAgain ? () => setRound(nextRound(round, players)) : null}
-            onExit={onExit}
-          />
-        )}
-      </main>
-    )
-  }
-
-  const seat = activeSeat(round)!
-  const turn = round.seats.indexOf(seat)
+  const betting = round.phase === 'betting'
+  // The seat stays on the last player to bet once the wheel is going, so the
+  // board can fade out still showing the chips they laid down.
+  const seat = round.seats[round.turn]
+  const turn = round.turn
   // One player sits to the left of the device, the other to the right, so the
   // board is turned a quarter turn towards whoever is betting.
   const degrees = turn === 0 ? 90 : -90
   const tilted = tiltAccess === 'granted'
   const facing = tilt === 'left' ? 0 : tilt === 'right' ? 1 : null
-  const active = !tilted || facing === turn
+  const active = betting && (!tilted || facing === turn)
   const free = remaining(seat)
   /** The last player still to bet sets the wheel going. */
   const lastToBet = round.seats.every((entry, index) => index === turn || entry.done)
   const setupNeeded = tiltAccess === 'prompt' || (canLock && !locked)
 
+  // One wheel sits behind every phase at a fixed size, and the betting board
+  // and the spin panel are cross-faded over it. Nothing is translated and the
+  // wheel is never remounted, so switching between the two is just a change of
+  // opacity and blur over an animation that carries straight on.
   return (
-    <main className="view-roulette view-roulette--table">
-      {/* The wheel keeps turning behind the board while bets are placed, with
-          the board itself left slightly see-through so it shows through. */}
-      <div className="roulette-backdrop" aria-hidden="true">
-        <WheelFace pocket={null} spinning={false} />
+    <main className={`view-roulette view-roulette--table${betting ? '' : ' view-roulette--spinning'}`}>
+      <div className="roulette-stage" aria-hidden="true">
+        <Wheel pocket={round.pocket} spinning={round.phase === 'spinning'} />
       </div>
 
-      <div className="roulette-table">
-        <RotatedSeat degrees={degrees}>
-          <section className="roulette-seat">
-            <header className="roulette-seat-header">
-              <h2>{seat.name}</h2>
-              <span className="seat-panel-status">
-                £{free} left of £{seat.cash}
-              </span>
+      <div className="roulette-layer roulette-layer--board" aria-hidden={!betting}>
+        <div className="roulette-table">
+          <RotatedSeat degrees={degrees}>
+            <section className="roulette-seat">
+              <header className="roulette-seat-header">
+                <h2>{seat.name}</h2>
+                <span className="seat-panel-status">
+                  £{free} left of £{seat.cash}
+                </span>
 
-              <div className="bet-actions">
-                {CHIPS.map(amount => (
-                  <button
-                    key={amount}
-                    type="button"
-                    className={`bet-chip-button${chip === amount ? ' bet-chip-button--selected' : ''}`}
-                    disabled={!active}
-                    onClick={() => setChip(amount)}
-                  >
-                    £{amount}
-                  </button>
-                ))}
-              </div>
+                <div className="bet-actions">
+                  {CHIPS.map(amount => (
+                    <button
+                      key={amount}
+                      type="button"
+                      className={`bet-chip-button${chip === amount ? ' bet-chip-button--selected' : ''}`}
+                      disabled={!active}
+                      onClick={() => setChip(amount)}
+                    >
+                      £{amount}
+                    </button>
+                  ))}
+                </div>
 
-              <button
-                type="button"
-                className="btn-secondary"
-                disabled={!active || staked(seat) === 0}
-                onClick={() => setRound(clearBets(round, seat.playerId))}
-              >
-                Clear
-              </button>
-              <button
-                type="button"
-                className="btn-primary"
-                disabled={!active}
-                onClick={() => setRound(endTurn(round, seat.playerId))}
-              >
-                {lastToBet ? 'Spin' : 'Done'}
-              </button>
-            </header>
+                <button
+                  type="button"
+                  className="btn-secondary"
+                  disabled={!active || staked(seat) === 0}
+                  onClick={() => setRound(clearBets(round, seat.playerId))}
+                >
+                  Clear
+                </button>
+                <button
+                  type="button"
+                  className="btn-primary"
+                  disabled={!active}
+                  onClick={() => setRound(endTurn(round, seat.playerId))}
+                >
+                  {lastToBet ? 'Spin' : 'Done'}
+                </button>
+              </header>
 
-            {active ? (
-              <p className="hint">
-                Tap a spot to add a £{chip} chip{free < chip ? ' — not enough cash left' : ''}, press and hold to take
-                the stake back off.
-              </p>
-            ) : (
-              <p className="hint">Tip the device towards {seat.name} to place their bets</p>
-            )}
+              {active ? (
+                <p className="hint">
+                  Tap a spot to add a £{chip} chip{free < chip ? ' — not enough cash left' : ''}, press and hold to take
+                  the stake back off.
+                </p>
+              ) : (
+                <p className="hint">Tip the device towards {seat.name} to place their bets</p>
+              )}
 
-            <BettingBoard
-              stakes={stakes}
-              pocket={null}
-              interactive={active}
-              onPlace={betId => setRound(placeChip(round, seat.playerId, betId, chip))}
-              onClear={betId => setRound(clearBet(round, seat.playerId, betId))}
-            />
-          </section>
-        </RotatedSeat>
+              <BettingBoard
+                stakes={stakes}
+                pocket={null}
+                interactive={active}
+                onPlace={betId => setRound(placeChip(round, seat.playerId, betId, chip))}
+                onClear={betId => setRound(clearBet(round, seat.playerId, betId))}
+              />
+            </section>
+          </RotatedSeat>
 
-        <div className="rummy-centre">
-          <button type="button" className="btn-ghost" onClick={onExit}>
-            Exit
-          </button>
-          <span className="pile-label">
-            {seat.name} betting ({round.seats.filter(entry => entry.done).length + 1} of {round.seats.length})
-          </span>
-          {setupNeeded ? (
-            <button type="button" className="btn-secondary" onClick={enable}>
-              Tilt setup
+          <div className="rummy-centre">
+            <button type="button" className="btn-ghost" disabled={!betting} onClick={onExit}>
+              Exit
             </button>
-          ) : (
-            !portrait && <span className="pile-label">Turn upright</span>
-          )}
+            <span className="pile-label">
+              {seat.name} betting ({round.seats.filter(entry => entry.done).length + 1} of {round.seats.length})
+            </span>
+            {setupNeeded ? (
+              <button type="button" className="btn-secondary" disabled={!betting} onClick={enable}>
+                Tilt setup
+              </button>
+            ) : (
+              !portrait && <span className="pile-label">Turn upright</span>
+            )}
+          </div>
         </div>
       </div>
+
+      <div className="roulette-layer roulette-layer--spin" aria-hidden={betting}>
+        <GameBar onExit={onExit} />
+
+        <div className="roulette-wheel-result">
+          {round.phase === 'spinning' || round.pocket === null ? (
+            <span className="hint">Spinning…</span>
+          ) : (
+            <span className={`roulette-result colour-${colourOf(round.pocket)}`}>{round.pocket}</span>
+          )}
+        </div>
+
+        <BetSummary seats={round.seats} />
+      </div>
+
+      {round.phase === 'summary' && results !== null && round.pocket !== null && (
+        <SpinSummary
+          pocket={round.pocket}
+          results={results}
+          onNext={canPlayAgain ? () => setRound(nextRound(round, players)) : null}
+          onExit={onExit}
+        />
+      )}
     </main>
   )
 }

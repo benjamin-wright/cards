@@ -38,10 +38,11 @@ type WheelProps = {
  * Both are driven straight from the DOM inside one animation frame loop, so
  * the browser never has to re-render React for a frame of motion.
  *
- * With no pocket the wheel just turns, which is what sits behind the betting
- * board.
+ * The same wheel sits behind every phase of the game — it just turns on its
+ * own, with no ball, until a spin is under way — so switching between betting
+ * and spinning never resizes or restarts it.
  */
-export function WheelFace({ pocket, spinning }: WheelProps) {
+export default function Wheel({ pocket, spinning }: WheelProps) {
   const face = useRef<SVGGElement>(null)
   const ball = useRef<SVGCircleElement>(null)
 
@@ -107,22 +108,5 @@ export function WheelFace({ pocket, spinning }: WheelProps) {
 
       {pocket !== null && <circle ref={ball} r={BALL_RADIUS} cx={CENTRE} cy={CENTRE} className="wheel-ball" />}
     </svg>
-  )
-}
-
-/** The wheel plus the winning number, as shown on the spinning screen. */
-export default function Wheel({ pocket, spinning }: WheelProps) {
-  return (
-    <div className="roulette-wheel">
-      <WheelFace pocket={pocket} spinning={spinning} />
-
-      <div className="roulette-wheel-result">
-        {spinning || pocket === null ? (
-          <span className="hint">Spinning…</span>
-        ) : (
-          <span className={`roulette-result colour-${colourOf(pocket)}`}>{pocket}</span>
-        )}
-      </div>
-    </div>
   )
 }

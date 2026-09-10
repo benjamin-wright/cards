@@ -1249,11 +1249,13 @@ button.hand-card:not(:disabled):hover {
   min-height: 0;
   position: relative;
   overflow: hidden;
+  /* How long the board takes to fade in or out over the wheel. */
+  --roulette-fade: 450ms;
 }
 
-/* The wheel turns away behind the betting board, dimmed back so the numbers
-   and chips still read over the top of it. */
-.roulette-backdrop {
+/* One wheel sits behind both phases at the same size, dimmed back while the
+   board is up so the numbers and chips still read over the top of it. */
+.roulette-stage {
   position: absolute;
   inset: 0;
   display: flex;
@@ -1261,11 +1263,48 @@ button.hand-card:not(:disabled):hover {
   justify-content: center;
   opacity: 0.4;
   pointer-events: none;
+  transition: opacity var(--roulette-fade) ease;
 }
 
-.roulette-backdrop .roulette-wheel-svg {
-  width: min(120vw, 80vh);
-  max-width: none;
+.view-roulette--spinning .roulette-stage {
+  opacity: 1;
+}
+
+/* The board and the spin panel are stacked on top of the wheel and cross-faded
+   between phases. Only the opacity and the blur over the wheel move: nothing is
+   translated, so the wheel carries on turning in place behind the change. */
+.roulette-layer {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  backdrop-filter: blur(2px);
+  transition:
+    opacity var(--roulette-fade) ease,
+    backdrop-filter var(--roulette-fade) ease;
+}
+
+.roulette-layer[aria-hidden='true'] {
+  opacity: 0;
+  backdrop-filter: blur(0);
+  pointer-events: none;
+  visibility: hidden;
+  transition:
+    opacity var(--roulette-fade) ease,
+    backdrop-filter var(--roulette-fade) ease,
+    visibility 0s linear var(--roulette-fade);
+}
+
+.roulette-layer--spin {
+  align-items: center;
+  gap: 16px;
+  padding: 24px 16px 0;
+  backdrop-filter: blur(0);
+}
+
+.roulette-layer--spin .roulette-bet-summary {
+  margin-top: auto;
 }
 
 .roulette-table {
@@ -1338,7 +1377,6 @@ button.hand-card:not(:disabled):hover {
   color: var(--surface);
   /* Kept translucent so the wheel turning behind shows through the board. */
   background: rgba(255, 255, 255, 0.06);
-  backdrop-filter: blur(1px);
   font-size: clamp(0.5rem, 1.6vh, 0.85rem);
   font-weight: 700;
   cursor: pointer;
@@ -1428,22 +1466,9 @@ button.hand-card:not(:disabled):hover {
 }
 
 /* ─── Roulette spinner ──────────────────────────────────────── */
-.view-roulette--spin {
-  justify-content: flex-start;
-}
-
-.roulette-wheel {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
-  flex: 1;
-  min-height: 0;
-  width: 100%;
-}
-
 .roulette-wheel-svg {
-  width: min(80vw, 60vh);
+  width: min(120vw, 80vh);
+  max-width: none;
   height: auto;
 }
 
