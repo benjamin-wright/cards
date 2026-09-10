@@ -1,12 +1,13 @@
+import { useCallback } from 'react'
 import GameSelect from './views/GameSelect'
 import PlayerSetup from './views/PlayerSetup'
 import Blackjack from './blackjack/Blackjack'
 import Rummy from './rummy/Rummy'
 import Cribbage from './cribbage/Cribbage'
 import CrazyEights from './crazyeights/CrazyEights'
-import type { Result } from './blackjack/round'
+import Roulette from './roulette/Roulette'
 import { games } from './games'
-import { isPlayerList, type Player } from './players'
+import { isPlayerList, type Player, type Settlement } from './players'
 import { STORAGE_KEYS, clearState, usePersistentState } from './storage'
 
 type AppState = {
@@ -36,21 +37,27 @@ function App() {
   const { players, editingPlayers, gameId } = state
   const game = games.find(entry => entry.id === gameId) ?? null
 
-  const settle = (results: Result[]) => {
-    setState(current => ({
-      ...current,
-      players: current.players.map(player => {
-        const result = results.find(entry => entry.playerId === player.id)
-        return result === undefined ? player : { ...player, cash: result.cashAfter }
-      }),
-    }))
-  }
+  // Games settle from an effect, so the callback is kept stable to avoid
+  // re-settling the same results on every render.
+  const settle = useCallback(
+    (results: Settlement[]) => {
+      setState(current => ({
+        ...current,
+        players: current.players.map(player => {
+          const result = results.find(entry => entry.playerId === player.id)
+          return result === undefined ? player : { ...player, cash: result.cashAfter }
+        }),
+      }))
+    },
+    [setState],
+  )
 
   const clearGames = () => {
     clearState(STORAGE_KEYS.blackjack)
     clearState(STORAGE_KEYS.rummy)
     clearState(STORAGE_KEYS.cribbage)
     clearState(STORAGE_KEYS.crazyEights)
+    clearState(STORAGE_KEYS.roulette)
   }
 
   /** Leaving a game abandons the hand in progress. */
@@ -91,6 +98,8 @@ function App() {
         <Cribbage players={players} onExit={leaveGame} />
       ) : game.id === 'crazy-eights' ? (
         <CrazyEights players={players} onExit={leaveGame} />
+      ) : game.id === 'roulette' ? (
+        <Roulette players={players} onSettle={settle} onExit={leaveGame} />
       ) : (
         <main className="view-game-placeholder">
           <h2>{game.name}</h2>

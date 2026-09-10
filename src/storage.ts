@@ -8,6 +8,7 @@ export const STORAGE_KEYS = {
   rummy: 'rummy',
   cribbage: 'cribbage',
   crazyEights: 'crazyEights',
+  roulette: 'roulette',
 } as const
 
 function storage(): Storage | null {

@@ -68,6 +68,41 @@ back to its own "Show cards" / "Hide cards" toggle, and cards go back face down
 as soon as the turn passes on. Reveals are never stored, so a refresh always
 comes back with hands face down.
 
+### Roulette
+
+Single-zero roulette for the same two players, staked from the shared cash
+pile. Players take it in turns to place their chips on one shared board —
+straight up numbers (35 to 1), the three column and dozen bets (2 to 1) and the
+even money red/black, odd/even and high/low bets. Tap a spot to add the
+selected £1, £5 or £10 chip, press and hold a spot to take that stake back off,
+or use "Clear" to lift the lot. Nobody can stake more than the cash they hold.
+
+The page is pinned to portrait like the other table games, and the board is
+turned a quarter turn so it reads as a landscape betting layout facing whoever
+is betting. The wheel turns away behind the board the whole time, with the
+betting spots left slightly see-through so it shows through them. Where tilt is available, the board only accepts chips while the
+device is angled towards the player whose turn it is; without it the board is
+always live for the player named at the top.
+
+Once both players have finished, the board fades away and the bets are listed
+underneath the wheel. The same wheel is used at the same size throughout and is
+never remounted, so the switch is only the board fading out and the blur over
+the wheel lifting — nothing slides or resizes. The wheel itself turns at a slow, constant
+crawl and is never stopped; the ball is thrown in the other direction along an
+entry tangent, runs a couple of circuits of the outer groove under a constant
+deceleration, then falls into the pockets on a parabola as it comes down to the
+wheel's own speed — after which it rides round in its pocket. A pop-up then
+shows every bet, what it won or lost, and each player's new total.
+
+The winning pocket is chosen as the wheel starts turning and the whole flight
+is worked backwards from where that pocket will be when the ball stops, so the
+ball is never nudged mid-flight and refreshing part way through settles on the
+same number.
+
+If a spin leaves either player short of the £1 minimum, that summary is still
+shown with the final balances — it just drops the "Next spin" button, since
+there's nothing left to bet with.
+
 ## Development
 
 ```bash
