@@ -79,7 +79,8 @@ or use "Clear" to lift the lot. Nobody can stake more than the cash they hold.
 
 The page is pinned to portrait like the other table games, and the board is
 turned a quarter turn so it reads as a landscape betting layout facing whoever
-is betting. Where tilt is available, the board only accepts chips while the
+is betting. The wheel turns away behind the board the whole time, with the
+betting spots left slightly see-through so it shows through them. Where tilt is available, the board only accepts chips while the
 device is angled towards the player whose turn it is; without it the board is
 always live for the player named at the top.
 

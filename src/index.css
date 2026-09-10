@@ -1247,9 +1247,29 @@ button.hand-card:not(:disabled):hover {
   padding: 0;
   gap: 0;
   min-height: 0;
+  position: relative;
+  overflow: hidden;
+}
+
+/* The wheel turns away behind the betting board, dimmed back so the numbers
+   and chips still read over the top of it. */
+.roulette-backdrop {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.4;
+  pointer-events: none;
+}
+
+.roulette-backdrop .roulette-wheel-svg {
+  width: min(120vw, 80vh);
+  max-width: none;
 }
 
 .roulette-table {
+  position: relative;
   flex: 1;
   display: grid;
   grid-template-rows: 1fr auto;
@@ -1278,6 +1298,11 @@ button.hand-card:not(:disabled):hover {
 
 .roulette-seat-header .seat-panel-status {
   color: rgba(255, 255, 255, 0.8);
+}
+
+.view-roulette--table .rummy-centre {
+  position: relative;
+  background: rgba(0, 0, 0, 0.35);
 }
 
 .roulette-seat-header .btn-primary,
@@ -1311,7 +1336,9 @@ button.hand-card:not(:disabled):hover {
   border: 1px solid rgba(255, 255, 255, 0.5);
   border-radius: 3px;
   color: var(--surface);
-  background: rgba(255, 255, 255, 0.08);
+  /* Kept translucent so the wheel turning behind shows through the board. */
+  background: rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(1px);
   font-size: clamp(0.5rem, 1.6vh, 0.85rem);
   font-weight: 700;
   cursor: pointer;
@@ -1323,15 +1350,15 @@ button.hand-card:not(:disabled):hover {
 }
 
 .board-spot.colour-red {
-  background: var(--red);
+  background: rgba(192, 57, 43, 0.72);
 }
 
 .board-spot.colour-black {
-  background: var(--black);
+  background: rgba(22, 21, 28, 0.72);
 }
 
 .board-spot.colour-green {
-  background: var(--accent);
+  background: rgba(14, 107, 61, 0.75);
 }
 
 .board-spot--outside {

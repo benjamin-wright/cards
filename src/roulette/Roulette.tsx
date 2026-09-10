@@ -5,7 +5,7 @@ import { STORAGE_KEYS, usePersistentState } from '../storage'
 import RotatedSeat from '../views/RotatedSeat'
 import BettingBoard, { type BoardStake } from './BettingBoard'
 import SpinSummary from './SpinSummary'
-import Wheel from './Wheel'
+import Wheel, { WheelFace } from './Wheel'
 import { SPIN_MS } from './spin'
 import { CHIPS, betSpot } from './bets'
 import {
@@ -183,6 +183,12 @@ export default function Roulette({ players, onSettle, onExit }: RouletteProps) {
 
   return (
     <main className="view-roulette view-roulette--table">
+      {/* The wheel keeps turning behind the board while bets are placed, with
+          the board itself left slightly see-through so it shows through. */}
+      <div className="roulette-backdrop" aria-hidden="true">
+        <WheelFace pocket={null} spinning={false} />
+      </div>
+
       <div className="roulette-table">
         <RotatedSeat degrees={degrees}>
           <section className="roulette-seat">

@@ -23,7 +23,7 @@ function wedge(index: number): string {
 }
 
 type WheelProps = {
-  /** The pocket the ball is heading for, or null while the wheel sits empty. */
+  /** The pocket the ball is heading for, or null for a wheel with no ball. */
   pocket: number | null
   spinning: boolean
 }
@@ -37,8 +37,11 @@ type WheelProps = {
  *
  * Both are driven straight from the DOM inside one animation frame loop, so
  * the browser never has to re-render React for a frame of motion.
+ *
+ * With no pocket the wheel just turns, which is what sits behind the betting
+ * board.
  */
-export default function Wheel({ pocket, spinning }: WheelProps) {
+export function WheelFace({ pocket, spinning }: WheelProps) {
   const face = useRef<SVGGElement>(null)
   const ball = useRef<SVGCircleElement>(null)
 
@@ -75,36 +78,43 @@ export default function Wheel({ pocket, spinning }: WheelProps) {
   }, [pocket, spinning])
 
   return (
+    <svg viewBox={`0 0 ${SIZE} ${SIZE}`} className="roulette-wheel-svg" role="img" aria-label="Roulette wheel">
+      <circle cx={CENTRE} cy={CENTRE} r={BOWL_RADIUS} className="wheel-bowl" />
+      <circle cx={CENTRE} cy={CENTRE} r={TRACK_RADIUS} className="wheel-track" />
+
+      <g className="wheel-face" ref={face}>
+        {WHEEL.map((number, index) => (
+          <path key={number} d={wedge(index)} className={`wheel-pocket colour-${colourOf(number)}`} />
+        ))}
+        {WHEEL.map((number, index) => {
+          const { x, y } = polar(NUMBER_RADIUS, index * POCKET_STEP)
+          return (
+            <text
+              key={number}
+              x={x}
+              y={y}
+              className="wheel-number"
+              transform={`rotate(${index * POCKET_STEP} ${x} ${y})`}
+              dominantBaseline="middle"
+              textAnchor="middle"
+            >
+              {number}
+            </text>
+          )
+        })}
+        <circle cx={CENTRE} cy={CENTRE} r={HUB_RADIUS} className="wheel-hub" />
+      </g>
+
+      {pocket !== null && <circle ref={ball} r={BALL_RADIUS} cx={CENTRE} cy={CENTRE} className="wheel-ball" />}
+    </svg>
+  )
+}
+
+/** The wheel plus the winning number, as shown on the spinning screen. */
+export default function Wheel({ pocket, spinning }: WheelProps) {
+  return (
     <div className="roulette-wheel">
-      <svg viewBox={`0 0 ${SIZE} ${SIZE}`} className="roulette-wheel-svg" role="img" aria-label="Roulette wheel">
-        <circle cx={CENTRE} cy={CENTRE} r={BOWL_RADIUS} className="wheel-bowl" />
-        <circle cx={CENTRE} cy={CENTRE} r={TRACK_RADIUS} className="wheel-track" />
-
-        <g className="wheel-face" ref={face}>
-          {WHEEL.map((number, index) => (
-            <path key={number} d={wedge(index)} className={`wheel-pocket colour-${colourOf(number)}`} />
-          ))}
-          {WHEEL.map((number, index) => {
-            const { x, y } = polar(NUMBER_RADIUS, index * POCKET_STEP)
-            return (
-              <text
-                key={number}
-                x={x}
-                y={y}
-                className="wheel-number"
-                transform={`rotate(${index * POCKET_STEP} ${x} ${y})`}
-                dominantBaseline="middle"
-                textAnchor="middle"
-              >
-                {number}
-              </text>
-            )
-          })}
-          <circle cx={CENTRE} cy={CENTRE} r={HUB_RADIUS} className="wheel-hub" />
-        </g>
-
-        {pocket !== null && <circle ref={ball} r={BALL_RADIUS} cx={CENTRE} cy={CENTRE} className="wheel-ball" />}
-      </svg>
+      <WheelFace pocket={pocket} spinning={spinning} />
 
       <div className="roulette-wheel-result">
         {spinning || pocket === null ? (
