@@ -5,7 +5,8 @@ import { STORAGE_KEYS, usePersistentState } from '../storage'
 import RotatedSeat from '../views/RotatedSeat'
 import BettingBoard, { type BoardStake } from './BettingBoard'
 import SpinSummary from './SpinSummary'
-import Wheel, { SPIN_MS } from './Wheel'
+import Wheel from './Wheel'
+import { SPIN_MS } from './spin'
 import { CHIPS, betSpot } from './bets'
 import {
   activeSeat,

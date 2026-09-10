@@ -1420,8 +1420,16 @@ button.hand-card:not(:disabled):hover {
   height: auto;
 }
 
-.wheel-rim {
+.wheel-bowl {
   fill: #2a2233;
+}
+
+/* The groove the ball runs round: it belongs to the bowl, not the face, so it
+   stays put while the wheel turns underneath it. */
+.wheel-track {
+  fill: none;
+  stroke: #3d3348;
+  stroke-width: 9;
 }
 
 .wheel-face {
@@ -1447,7 +1455,7 @@ button.hand-card:not(:disabled):hover {
 
 .wheel-number {
   fill: var(--surface);
-  font-size: 7px;
+  font-size: 6.5px;
   font-weight: 700;
 }
 
@@ -1456,8 +1464,11 @@ button.hand-card:not(:disabled):hover {
   stroke: rgba(255, 255, 255, 0.3);
 }
 
-.wheel-marker {
-  fill: #f2c14e;
+.wheel-ball {
+  fill: #fdfaf3;
+  stroke: rgba(0, 0, 0, 0.35);
+  stroke-width: 0.6;
+  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.5));
 }
 
 .roulette-wheel-result {

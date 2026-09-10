@@ -83,10 +83,17 @@ is betting. Where tilt is available, the board only accepts chips while the
 device is angled towards the player whose turn it is; without it the board is
 always live for the player named at the top.
 
-Once both players have finished, the screen switches to the wheel: it spins for
-a few seconds with both players' bets listed underneath, then a pop-up shows
-every bet, what it won or lost, and each player's new total. The winning pocket
-is chosen as the wheel starts turning, so refreshing mid-spin settles on the
+Once both players have finished, the screen switches to the wheel, with both
+players' bets listed underneath. The wheel itself turns at a slow, constant
+crawl and is never stopped; the ball is thrown in the other direction along an
+entry tangent, runs a couple of circuits of the outer groove under a constant
+deceleration, then falls into the pockets on a parabola as it comes down to the
+wheel's own speed — after which it rides round in its pocket. A pop-up then
+shows every bet, what it won or lost, and each player's new total.
+
+The winning pocket is chosen as the wheel starts turning and the whole flight
+is worked backwards from where that pocket will be when the ball stops, so the
+ball is never nudged mid-flight and refreshing part way through settles on the
 same number.
 
 If a spin leaves either player short of the £1 minimum, that summary is still

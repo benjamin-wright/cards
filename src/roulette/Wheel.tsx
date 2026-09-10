@@ -1,93 +1,98 @@
 import { useEffect, useRef } from 'react'
-import { POCKETS, WHEEL, colourOf, pocketAngle } from './wheel'
-
-/** How long the wheel takes to come to rest. */
-export const SPIN_MS = 4500
-
-const SIZE = 200
-const CENTRE = SIZE / 2
-const RIM = CENTRE - 4
-const HUB = CENTRE * 0.42
-const STEP = 360 / POCKETS
-/** Full turns before the wheel settles, so the result isn't given away early. */
-const TURNS = 6
-
-function point(radius: number, degrees: number): [number, number] {
-  const radians = ((degrees - 90) * Math.PI) / 180
-  return [CENTRE + radius * Math.cos(radians), CENTRE + radius * Math.sin(radians)]
-}
+import {
+  BALL_RADIUS,
+  BOWL_RADIUS,
+  CENTRE,
+  HUB_RADIUS,
+  LANDING_MS,
+  NUMBER_RADIUS,
+  POCKET_STEP,
+  RIM_RADIUS,
+  SIZE,
+  TRACK_RADIUS,
+  ballAt,
+  polar,
+  wheelAngle,
+} from './spin'
+import { WHEEL, colourOf } from './wheel'
 
 function wedge(index: number): string {
-  const [x1, y1] = point(RIM, index * STEP - STEP / 2)
-  const [x2, y2] = point(RIM, index * STEP + STEP / 2)
-  return `M ${CENTRE} ${CENTRE} L ${x1} ${y1} A ${RIM} ${RIM} 0 0 1 ${x2} ${y2} Z`
+  const start = polar(RIM_RADIUS, index * POCKET_STEP - POCKET_STEP / 2)
+  const end = polar(RIM_RADIUS, index * POCKET_STEP + POCKET_STEP / 2)
+  return `M ${CENTRE} ${CENTRE} L ${start.x} ${start.y} A ${RIM_RADIUS} ${RIM_RADIUS} 0 0 1 ${end.x} ${end.y} Z`
 }
 
 type WheelProps = {
-  /** The pocket to settle on, or null while the wheel sits still. */
+  /** The pocket the ball is heading for, or null while the wheel sits empty. */
   pocket: number | null
   spinning: boolean
 }
 
 /**
- * The wheel is drawn once with zero at the top, then turned so the winning
- * pocket comes to rest under the marker. Rotating clockwise by
- * `360 * turns - pocketAngle` lands the pocket at twelve o'clock however many
- * whole turns it takes on the way.
+ * A casino wheel rather than a fairground one: the face turns at a slow,
+ * constant crawl and is never stopped, while the ball is thrown the other way
+ * along an entry tangent, runs the outer groove under a constant deceleration
+ * and falls into the pockets as it comes down to the wheel's own speed. Once
+ * the spin is over the ball simply rides round in its pocket.
+ *
+ * Both are driven straight from the DOM inside one animation frame loop, so
+ * the browser never has to re-render React for a frame of motion.
  */
 export default function Wheel({ pocket, spinning }: WheelProps) {
   const face = useRef<SVGGElement>(null)
+  const ball = useRef<SVGCircleElement>(null)
 
-  // The turning wheel is driven straight from the DOM rather than through
-  // React state, so the browser animates the transform without a re-render
-  // for every frame.
   useEffect(() => {
-    const node = face.current
-    if (node === null) return
+    const faceNode = face.current
+    if (faceNode === null) return
 
-    const settle = (degrees: number) => {
-      node.style.transition = 'none'
-      node.style.transform = `rotate(${degrees}deg)`
+    // A landed spin is picked up as though it had been thrown long enough ago
+    // for the ball to have dropped, so a refresh — or the hand-over from
+    // spinning to the summary — leaves it sitting in its pocket rather than
+    // throwing it in all over again.
+    const started = performance.now() - (spinning ? 0 : LANDING_MS)
+    // Deriving the starting angle from the clock keeps the face turning from
+    // wherever it had got to instead of snapping back to the top.
+    const from = wheelAngle(started)
+
+    let frame = 0
+    const draw = (now: number) => {
+      const elapsed = now - started
+      faceNode.style.transform = `rotate(${wheelAngle(elapsed, from)}deg)`
+
+      const ballNode = ball.current
+      if (ballNode !== null && pocket !== null) {
+        const { x, y } = ballAt(elapsed, pocket, from)
+        ballNode.setAttribute('cx', String(x))
+        ballNode.setAttribute('cy', String(y))
+      }
+
+      frame = requestAnimationFrame(draw)
     }
 
-    if (pocket === null) {
-      settle(0)
-      return
-    }
-
-    const resting = TURNS * 360 - pocketAngle(pocket)
-    if (!spinning) {
-      settle(resting)
-      return
-    }
-
-    // A frame at the starting angle first, so the browser has something to
-    // animate away from when the round is picked up mid-spin after a refresh.
-    settle(0)
-    const frame = requestAnimationFrame(() => {
-      node.style.transition = `transform ${SPIN_MS}ms cubic-bezier(0.16, 0.85, 0.2, 1)`
-      node.style.transform = `rotate(${resting}deg)`
-    })
+    frame = requestAnimationFrame(draw)
     return () => cancelAnimationFrame(frame)
   }, [pocket, spinning])
 
   return (
     <div className="roulette-wheel">
       <svg viewBox={`0 0 ${SIZE} ${SIZE}`} className="roulette-wheel-svg" role="img" aria-label="Roulette wheel">
-        <circle cx={CENTRE} cy={CENTRE} r={CENTRE - 1} className="wheel-rim" />
+        <circle cx={CENTRE} cy={CENTRE} r={BOWL_RADIUS} className="wheel-bowl" />
+        <circle cx={CENTRE} cy={CENTRE} r={TRACK_RADIUS} className="wheel-track" />
+
         <g className="wheel-face" ref={face}>
           {WHEEL.map((number, index) => (
             <path key={number} d={wedge(index)} className={`wheel-pocket colour-${colourOf(number)}`} />
           ))}
           {WHEEL.map((number, index) => {
-            const [x, y] = point(RIM * 0.8, index * STEP)
+            const { x, y } = polar(NUMBER_RADIUS, index * POCKET_STEP)
             return (
               <text
                 key={number}
                 x={x}
                 y={y}
                 className="wheel-number"
-                transform={`rotate(${index * STEP} ${x} ${y})`}
+                transform={`rotate(${index * POCKET_STEP} ${x} ${y})`}
                 dominantBaseline="middle"
                 textAnchor="middle"
               >
@@ -95,9 +100,10 @@ export default function Wheel({ pocket, spinning }: WheelProps) {
               </text>
             )
           })}
-          <circle cx={CENTRE} cy={CENTRE} r={HUB} className="wheel-hub" />
+          <circle cx={CENTRE} cy={CENTRE} r={HUB_RADIUS} className="wheel-hub" />
         </g>
-        <path d={`M ${CENTRE - 8} 2 L ${CENTRE + 8} 2 L ${CENTRE} 20 Z`} className="wheel-marker" />
+
+        {pocket !== null && <circle ref={ball} r={BALL_RADIUS} cx={CENTRE} cy={CENTRE} className="wheel-ball" />}
       </svg>
 
       <div className="roulette-wheel-result">
