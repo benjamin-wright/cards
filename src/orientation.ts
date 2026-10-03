@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 
 /**
  * Which way the device is tipped. `flat` means it's lying on the table (or
@@ -7,23 +7,14 @@ import { useCallback, useEffect, useRef, useState } from 'react'
  */
 export type Tilt = 'flat' | 'left' | 'right'
 
-/**
- * Tilt sensors need explicit permission on some platforms. Without them the
- * app can't tell who's holding the device, so it falls back to manual
- * show/hide toggles.
- */
-export type TiltAccess = 'unavailable' | 'prompt' | 'granted'
+export type TiltAccess = 'unavailable' | 'prompt' | 'checking' | 'granted'
 
 export type DeviceView = {
   tilt: Tilt
   tiltAccess: TiltAccess
   /** False while the browser has turned the page sideways. */
   portrait: boolean
-  /** True once the page is pinned to portrait, so tilting can't rotate it. */
-  locked: boolean
-  /** Whether this browser can pin the page to portrait at all. */
-  canLock: boolean
-  /** Asks for tilt access and pins the page to portrait, in one gesture. */
+  /** Requests tilt access in response to a user gesture. */
   enable: () => void
 }
 
@@ -61,16 +52,7 @@ function permissionApi(): PermissionApi | null {
 function initialAccess(): TiltAccess {
   const api = permissionApi()
   if (api === null) return 'unavailable'
-  return typeof api.requestPermission === 'function' ? 'prompt' : 'granted'
-}
-
-function screenOrientation(): ScreenOrientation | null {
-  if (typeof window === 'undefined') return null
-  return window.screen?.orientation ?? null
-}
-
-function lockSupported(): boolean {
-  return typeof screenOrientation()?.lock === 'function'
+  return typeof api.requestPermission === 'function' ? 'prompt' : 'checking'
 }
 
 function isPortrait(): boolean {
@@ -78,33 +60,14 @@ function isPortrait(): boolean {
   return window.matchMedia(PORTRAIT).matches
 }
 
-/** Most browsers only allow an orientation lock while in fullscreen. */
-async function lockPortrait(): Promise<boolean> {
-  const orientation = screenOrientation()
-  if (orientation === null || typeof orientation.lock !== 'function') return false
-
-  try {
-    if (document.fullscreenElement === null && typeof document.documentElement.requestFullscreen === 'function') {
-      await document.documentElement.requestFullscreen()
-    }
-    await orientation.lock('portrait')
-    return true
-  } catch {
-    return false
-  }
-}
-
 /**
- * Reads how the device is being held without letting the browser's own
- * rotation get involved. The page is pinned to portrait, so turning the device
- * towards one player tips the tilt reading rather than spinning the layout.
+ * Reads device tilt while the page remains in portrait. If rotation is not
+ * locked by the user, the table is covered until portrait is restored.
  */
 export function useDeviceView(): DeviceView {
   const [tilt, setTilt] = useState<Tilt>('flat')
   const [tiltAccess, setTiltAccess] = useState<TiltAccess>(initialAccess)
   const [portrait, setPortrait] = useState<boolean>(isPortrait)
-  const [locked, setLocked] = useState(false)
-  const lockedRef = useRef(false)
 
   useEffect(() => {
     if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return
@@ -118,46 +81,38 @@ export function useDeviceView(): DeviceView {
   }, [])
 
   useEffect(() => {
-    if (tiltAccess !== 'granted' || typeof window === 'undefined') return
+    if ((tiltAccess !== 'checking' && tiltAccess !== 'granted') || typeof window === 'undefined') return
 
     const update = (event: DeviceOrientationEvent) => {
-      if (event.gamma === null) return
+      if (event.gamma === null || !Number.isFinite(event.gamma)) return
       const { gamma } = event
+      setTiltAccess('granted')
       setTilt(current => nextTilt(current, gamma))
     }
 
     window.addEventListener('deviceorientation', update)
-    return () => window.removeEventListener('deviceorientation', update)
+    const timer = tiltAccess === 'checking' ? window.setTimeout(() => setTiltAccess('unavailable'), 5000) : null
+    return () => {
+      window.removeEventListener('deviceorientation', update)
+      if (timer !== null) window.clearTimeout(timer)
+    }
   }, [tiltAccess])
-
-  // The lock belongs to the screen that asked for it, so it's released again
-  // on the way out rather than left on for the rest of the app.
-  useEffect(
-    () => () => {
-      if (lockedRef.current) {
-        screenOrientation()?.unlock()
-      }
-    },
-    [],
-  )
 
   const enable = useCallback(() => {
     const api = permissionApi()
-
-    // A refused prompt or an unsupported lock just leaves the manual toggles
-    // in place, which still works.
+    if (api === null) {
+      setTiltAccess('unavailable')
+      return
+    }
     if (api !== null && typeof api.requestPermission === 'function') {
       api
         .requestPermission()
-        .then(state => setTiltAccess(state === 'granted' ? 'granted' : 'unavailable'))
+        .then(state => setTiltAccess(state === 'granted' ? 'checking' : 'unavailable'))
         .catch(() => setTiltAccess('unavailable'))
+    } else {
+      setTiltAccess('checking')
     }
-
-    void lockPortrait().then(success => {
-      lockedRef.current = success
-      setLocked(success)
-    })
   }, [])
 
-  return { tilt, tiltAccess, portrait, locked, canLock: lockSupported(), enable }
+  return { tilt, tiltAccess, portrait, enable }
 }

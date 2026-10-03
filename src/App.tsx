@@ -7,6 +7,7 @@ import Cribbage from './cribbage/Cribbage'
 import CrazyEights from './crazyeights/CrazyEights'
 import Roulette from './roulette/Roulette'
 import { games } from './games'
+import { useDeviceView } from './orientation'
 import { isPlayerList, type Player, type Settlement } from './players'
 import { STORAGE_KEYS, clearState, usePersistentState } from './storage'
 
@@ -24,6 +25,67 @@ function isAppState(value: unknown): value is AppState {
     typeof state.editingPlayers === 'boolean' &&
     (state.gameId === null || typeof state.gameId === 'string') &&
     isPlayerList(state.players)
+  )
+}
+
+function TableGame({
+  gameId,
+  players,
+  onSettle,
+  onExit,
+}: {
+  gameId: string
+  players: Player[]
+  onSettle: (results: Settlement[]) => void
+  onExit: () => void
+}) {
+  const { tilt, tiltAccess, portrait, enable } = useDeviceView()
+  const blocked = !portrait || tiltAccess !== 'granted'
+
+  return (
+    <>
+      <div inert={blocked} aria-hidden={blocked}>
+        {gameId === 'rummy' ? (
+          <Rummy players={players} tilt={tilt} onExit={onExit} />
+        ) : gameId === 'cribbage' ? (
+          <Cribbage players={players} tilt={tilt} onExit={onExit} />
+        ) : gameId === 'crazy-eights' ? (
+          <CrazyEights players={players} tilt={tilt} onExit={onExit} />
+        ) : (
+          <Roulette players={players} tilt={tilt} onSettle={onSettle} onExit={onExit} />
+        )}
+      </div>
+      {blocked && (
+        <div className="device-gate" role="dialog" aria-modal="true" aria-labelledby="device-gate-title">
+          {!portrait ? (
+            <>
+              <h1 id="device-gate-title">Turn your device upright and lock the orientation</h1>
+              <p>Keep the screen in portrait so you can tilt the device towards each player.</p>
+            </>
+          ) : tiltAccess === 'checking' ? (
+            <>
+              <h1 id="device-gate-title">Checking device tilt…</h1>
+              <p>Move your device slightly to check its motion sensor.</p>
+            </>
+          ) : (
+            <>
+              <h1 id="device-gate-title">Tilt access needed</h1>
+              <p>
+                {tiltAccess === 'unavailable'
+                  ? 'No tilt reading was received. Check your browser settings or try again.'
+                  : 'Tap below to allow motion access and play using device tilt.'}
+              </p>
+              <button type="button" className="btn-primary" onClick={enable}>
+                {tiltAccess === 'unavailable' ? 'Try tilt again' : 'Allow tilt access'}
+              </button>
+            </>
+          )}
+          <button type="button" className="btn-secondary" onClick={onExit}>
+            Back to games
+          </button>
+        </div>
+      )}
+    </>
   )
 }
 
@@ -92,14 +154,8 @@ function App() {
         />
       ) : game.id === 'blackjack' ? (
         <Blackjack players={players} onSettle={settle} onExit={leaveGame} />
-      ) : game.id === 'rummy' ? (
-        <Rummy players={players} onExit={leaveGame} />
-      ) : game.id === 'cribbage' ? (
-        <Cribbage players={players} onExit={leaveGame} />
-      ) : game.id === 'crazy-eights' ? (
-        <CrazyEights players={players} onExit={leaveGame} />
-      ) : game.id === 'roulette' ? (
-        <Roulette players={players} onSettle={settle} onExit={leaveGame} />
+      ) : ['rummy', 'cribbage', 'crazy-eights', 'roulette'].includes(game.id) ? (
+        <TableGame gameId={game.id} players={players} onSettle={settle} onExit={leaveGame} />
       ) : (
         <main className="view-game-placeholder">
           <h2>{game.name}</h2>
