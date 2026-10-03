@@ -348,8 +348,8 @@ export default function Cribbage({ players, tilt, onExit }: CribbageProps & { ti
 
   return (
     <main className="view-cribbage view-cribbage--table">
-      <div className="cribbage-table">
-        {/* Dynamic Cribbage Board and revealed cards on the left */}
+      <div className="cribbage-table" data-tilt={tilt}>
+        {/* Public board and revealed cards shift away from the open seat. */}
         <div className="cribbage-board-container">
           <div className="cribbage-revealed-section">
             {round.hands.map(hand => (
@@ -380,7 +380,7 @@ export default function Cribbage({ players, tilt, onExit }: CribbageProps & { ti
           />
         </div>
 
-        {/* Player seats and controls on the right */}
+        {/* Private seats enter from either side. */}
         <div className="cribbage-right-side">
           <div className="cribbage-top-bar">
             <div className="piles">
@@ -421,8 +421,8 @@ export default function Cribbage({ players, tilt, onExit }: CribbageProps & { ti
           </div>
 
           <div className="cribbage-seats">
-            <RotatedSeat degrees={90}>{panelFor(left)}</RotatedSeat>
-            <RotatedSeat degrees={-90}>{panelFor(right)}</RotatedSeat>
+            <RotatedSeat degrees={90} revealed={tilt === 'left'}>{panelFor(left)}</RotatedSeat>
+            <RotatedSeat degrees={-90} revealed={tilt === 'right'}>{panelFor(right)}</RotatedSeat>
           </div>
         </div>
       </div>

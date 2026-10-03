@@ -162,19 +162,17 @@ export default function Roulette({ players, tilt, onSettle, onExit }: RoulettePr
   /** The last player still to bet sets the wheel going. */
   const lastToBet = round.seats.every((entry, index) => index === turn || entry.done)
 
-  // One wheel sits behind every phase at a fixed size, and the betting board
-  // and the spin panel are cross-faded over it. Nothing is translated and the
-  // wheel is never remounted, so switching between the two is just a change of
-  // opacity and blur over an animation that carries straight on.
+  // The wheel stays mounted behind every phase while the board and spin panel
+  // cross-fade; it shifts aside only while a player's betting seat is open.
   return (
-    <main className={`view-roulette view-roulette--table${betting ? '' : ' view-roulette--spinning'}`}>
+    <main className={`view-roulette view-roulette--table${betting ? (active ? ` view-roulette--${tilt}` : ' view-roulette--flat') : ' view-roulette--spinning'}`}>
       <div className="roulette-stage" aria-hidden="true">
         <Wheel pocket={round.pocket} spinning={round.phase === 'spinning'} />
       </div>
 
       <div className="roulette-layer roulette-layer--board" aria-hidden={!betting}>
         <div className="roulette-table">
-          <RotatedSeat degrees={degrees}>
+          <RotatedSeat degrees={degrees} revealed={active}>
             <section className="roulette-seat">
               <header className="roulette-seat-header">
                 <h2>{seat.name}</h2>
@@ -233,10 +231,10 @@ export default function Roulette({ players, tilt, onSettle, onExit }: RoulettePr
             </section>
           </RotatedSeat>
 
+          <button type="button" className="btn-ghost roulette-exit" onClick={onExit}>
+            Exit
+          </button>
           <div className="rummy-centre">
-            <button type="button" className="btn-ghost" disabled={!betting} onClick={onExit}>
-              Exit
-            </button>
             <span className="pile-label">
               {seat.name} betting ({round.seats.filter(entry => entry.done).length + 1} of {round.seats.length})
             </span>

@@ -3,6 +3,7 @@ import { useEffect, useRef, useState, type ReactNode } from 'react'
 type RotatedSeatProps = {
   /** Quarter turn to apply: 90 faces the player on the left, -90 the right. */
   degrees: 90 | -90
+  revealed: boolean
   children: ReactNode
 }
 
@@ -14,7 +15,7 @@ type RotatedSeatProps = {
  * A rotated element keeps its original box, so the panel is measured and given
  * the slot's dimensions swapped over before being turned.
  */
-export default function RotatedSeat({ degrees, children }: RotatedSeatProps) {
+export default function RotatedSeat({ degrees, revealed, children }: RotatedSeatProps) {
   const slot = useRef<HTMLDivElement>(null)
   const [box, setBox] = useState({ width: 0, height: 0 })
 
@@ -34,7 +35,12 @@ export default function RotatedSeat({ degrees, children }: RotatedSeatProps) {
   }, [])
 
   return (
-    <div className="seat-slot" ref={slot}>
+    <div
+      className={`seat-slot seat-slot--${degrees === 90 ? 'left' : 'right'}${revealed ? ' seat-slot--revealed' : ''}`}
+      ref={slot}
+      inert={!revealed}
+      aria-hidden={!revealed}
+    >
       <div
         className="seat-rotor"
         style={{

@@ -452,11 +452,10 @@ export default function Rummy({ players, tilt, onExit }: RummyProps & { tilt: Ti
 
   return (
     <main className="view-rummy view-rummy--table">
-      <div className="rummy-table">
-        <RotatedSeat degrees={90}>{panelFor(left)}</RotatedSeat>
+      <div className="rummy-table" data-tilt={tilt}>
+        <RotatedSeat degrees={90} revealed={tilt === 'left'}>{panelFor(left)}</RotatedSeat>
 
-        {/* Only the shared piles sit in the middle, since it's the one strip
-            that can't face both players at once. */}
+        {/* Shared piles move to the free side when a player's seat opens. */}
         <div className="rummy-centre">
           <button type="button" className="btn-ghost" onClick={onExit}>
             Exit
@@ -474,7 +473,7 @@ export default function Rummy({ players, tilt, onExit }: RummyProps & { tilt: Ti
 
         </div>
 
-        <RotatedSeat degrees={-90}>{panelFor(right)}</RotatedSeat>
+        <RotatedSeat degrees={-90} revealed={tilt === 'right'}>{panelFor(right)}</RotatedSeat>
       </div>
     </main>
   )
