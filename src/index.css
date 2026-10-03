@@ -78,6 +78,8 @@ p {
   display: flex;
   flex-direction: column;
   min-height: 0;
+  height: calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+  overflow: hidden;
 }
 
 .device-gate {
@@ -771,9 +773,10 @@ button:disabled {
 }
 
 .rummy-table {
+  position: relative;
   flex: 1;
   display: grid;
-  grid-template-rows: 1fr auto 1fr;
+  grid-template-rows: repeat(2, minmax(0, 1fr));
   width: 100%;
   min-height: 0;
 }
@@ -782,6 +785,31 @@ button:disabled {
   position: relative;
   overflow: hidden;
   min-height: 0;
+  z-index: 1;
+  pointer-events: none;
+  transition: transform 350ms ease-in-out, visibility 0s linear 350ms;
+  visibility: hidden;
+}
+
+.seat-slot--left {
+  transform: translateY(-100%);
+}
+
+.seat-slot--right {
+  transform: translateY(100%);
+}
+
+.seat-slot--revealed {
+  transform: translateY(0);
+  visibility: visible;
+  pointer-events: auto;
+  transition: transform 350ms ease-in-out, visibility 0s;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .seat-slot {
+    transition: none;
+  }
 }
 
 /* A rotated element keeps its original box, so the rotor is given the slot's
@@ -803,6 +831,24 @@ button:disabled {
   gap: 12px;
   padding: 6px 10px;
   background: rgba(0, 0, 0, 0.18);
+}
+
+.rummy-table > .rummy-centre {
+  position: absolute;
+  inset: 0;
+  flex-direction: column;
+  pointer-events: none;
+  background: none;
+}
+
+.rummy-table > .rummy-centre > * {
+  pointer-events: auto;
+}
+
+.rummy-table > .rummy-centre > .btn-ghost {
+  position: absolute;
+  top: 8px;
+  right: 8px;
 }
 
 .rummy-centre .btn-ghost,
@@ -950,21 +996,23 @@ button.hand-card:not(:disabled):hover {
 }
 
 .cribbage-table {
+  position: relative;
   flex: 1;
   display: grid;
-  grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr);
   width: 100%;
   min-height: 0;
 }
 
 .cribbage-board-container {
+  grid-area: 1 / 1;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: flex-start;
   padding: 8px;
   background: rgba(0, 0, 0, 0.22);
-  border-right: 1px solid rgba(255, 255, 255, 0.1);
+  padding-top: 56px;
   min-height: 0;
   min-width: 0;
   overflow: hidden;
@@ -1082,6 +1130,10 @@ button.hand-card:not(:disabled):hover {
 }
 
 .cribbage-right-side {
+  grid-area: 1 / 1;
+  position: relative;
+  z-index: 1;
+  pointer-events: none;
   display: flex;
   flex-direction: column;
   width: 100%;
@@ -1091,6 +1143,12 @@ button.hand-card:not(:disabled):hover {
 }
 
 .cribbage-top-bar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 2;
+  pointer-events: auto;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -1118,7 +1176,7 @@ button.hand-card:not(:disabled):hover {
 .cribbage-seats {
   flex: 1;
   display: grid;
-  grid-template-rows: 1fr 1fr;
+  grid-template-rows: repeat(2, minmax(0, 1fr));
   min-height: 0;
   min-width: 0;
 }
@@ -1153,12 +1211,8 @@ button.hand-card:not(:disabled):hover {
 }
 
 @media (max-width: 600px) {
-  .cribbage-table {
-    grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
-  }
-
   .cribbage-board-container {
-    padding: 4px;
+    padding: 56px 4px 4px;
   }
 }
 
@@ -1339,9 +1393,20 @@ button.hand-card:not(:disabled):hover {
   position: relative;
   flex: 1;
   display: grid;
-  grid-template-rows: 1fr auto;
   width: 100%;
   min-height: 0;
+}
+
+.roulette-table > .seat-slot {
+  position: absolute;
+  inset: 0;
+}
+
+.roulette-table > .rummy-centre {
+  position: absolute;
+  bottom: 0;
+  width: 100%;
+  z-index: 2;
 }
 
 .roulette-seat {

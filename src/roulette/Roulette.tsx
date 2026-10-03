@@ -174,7 +174,7 @@ export default function Roulette({ players, tilt, onSettle, onExit }: RoulettePr
 
       <div className="roulette-layer roulette-layer--board" aria-hidden={!betting}>
         <div className="roulette-table">
-          <RotatedSeat degrees={degrees}>
+          <RotatedSeat degrees={degrees} revealed={active}>
             <section className="roulette-seat">
               <header className="roulette-seat-header">
                 <h2>{seat.name}</h2>

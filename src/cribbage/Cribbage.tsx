@@ -421,8 +421,8 @@ export default function Cribbage({ players, tilt, onExit }: CribbageProps & { ti
           </div>
 
           <div className="cribbage-seats">
-            <RotatedSeat degrees={90}>{panelFor(left)}</RotatedSeat>
-            <RotatedSeat degrees={-90}>{panelFor(right)}</RotatedSeat>
+            <RotatedSeat degrees={90} revealed={tilt === 'left'}>{panelFor(left)}</RotatedSeat>
+            <RotatedSeat degrees={-90} revealed={tilt === 'right'}>{panelFor(right)}</RotatedSeat>
           </div>
         </div>
       </div>
