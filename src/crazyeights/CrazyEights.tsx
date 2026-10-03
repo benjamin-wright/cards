@@ -367,7 +367,7 @@ export default function CrazyEights({ players, tilt, onExit }: CrazyEightsProps 
 
   return (
     <main className="view-rummy view-rummy--table">
-      <div className="rummy-table">
+      <div className="rummy-table" data-tilt={tilt}>
         <RotatedSeat degrees={90} revealed={tilt === 'left'}>{panelFor(left)}</RotatedSeat>
 
         {/* Only the shared piles sit in the middle, since it's the one strip
