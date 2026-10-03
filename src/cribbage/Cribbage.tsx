@@ -348,7 +348,7 @@ export default function Cribbage({ players, tilt, onExit }: CribbageProps & { ti
 
   return (
     <main className="view-cribbage view-cribbage--table">
-      <div className="cribbage-table">
+      <div className="cribbage-table" data-tilt={tilt}>
         {/* Dynamic Cribbage Board and revealed cards on the left */}
         <div className="cribbage-board-container">
           <div className="cribbage-revealed-section">

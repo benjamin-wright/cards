@@ -853,10 +853,12 @@ button:disabled {
 
 .rummy-table[data-tilt='left'] > .rummy-centre > .piles {
   transform: translateX(25vw);
+  max-width: 50%;
 }
 
 .rummy-table[data-tilt='right'] > .rummy-centre > .piles {
   transform: translateX(-25vw);
+  max-width: 50%;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -1018,14 +1020,14 @@ button.hand-card:not(:disabled):hover {
 .cribbage-table {
   position: relative;
   flex: 1;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
   width: 100%;
   min-height: 0;
 }
 
 .cribbage-board-container {
-  grid-area: 1 / 1;
+  position: absolute;
+  inset: 0 auto 0 25%;
+  width: 50%;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -1036,6 +1038,15 @@ button.hand-card:not(:disabled):hover {
   min-height: 0;
   min-width: 0;
   overflow: hidden;
+  transition: left 350ms ease-in-out;
+}
+
+.cribbage-table[data-tilt='left'] .cribbage-board-container {
+  left: 50%;
+}
+
+.cribbage-table[data-tilt='right'] .cribbage-board-container {
+  left: 0;
 }
 
 .cribbage-revealed-section {
@@ -1055,6 +1066,7 @@ button.hand-card:not(:disabled):hover {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  flex-wrap: wrap;
   gap: 8px;
 }
 
@@ -1074,7 +1086,7 @@ button.hand-card:not(:disabled):hover {
 }
 
 .cribbage-revealed-cards .hand-card {
-  width: 34px;
+  width: 28px;
 }
 
 .cribbage-board-wrapper {
@@ -1150,8 +1162,8 @@ button.hand-card:not(:disabled):hover {
 }
 
 .cribbage-right-side {
-  grid-area: 1 / 1;
-  position: relative;
+  position: absolute;
+  inset: 0;
   z-index: 1;
   pointer-events: none;
   display: flex;
@@ -1177,14 +1189,37 @@ button.hand-card:not(:disabled):hover {
   padding: 6px 12px;
   background: rgba(0, 0, 0, 0.22);
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  min-height: 0;
+  min-height: 56px;
   flex-shrink: 0;
+}
+
+.cribbage-top-bar .piles {
+  position: absolute;
+  top: 6px;
+  left: 25%;
+  width: 50%;
+  transition: left 350ms ease-in-out;
+}
+
+.cribbage-table[data-tilt='left'] .cribbage-top-bar .piles {
+  left: 50%;
+}
+
+.cribbage-table[data-tilt='right'] .cribbage-top-bar .piles {
+  left: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cribbage-top-bar .piles {
+    transition: none;
+  }
 }
 
 .cribbage-controls {
   display: flex;
   align-items: center;
   gap: 8px;
+  margin-left: auto;
 }
 
 .cribbage-top-bar .btn-ghost,
@@ -1196,9 +1231,15 @@ button.hand-card:not(:disabled):hover {
 .cribbage-seats {
   flex: 1;
   display: grid;
-  grid-template-rows: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   min-height: 0;
   min-width: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cribbage-board-container {
+    transition: none;
+  }
 }
 
 .dealer-tag {
@@ -1365,7 +1406,20 @@ button.hand-card:not(:disabled):hover {
   justify-content: center;
   opacity: 0.4;
   pointer-events: none;
-  transition: opacity var(--roulette-fade) ease;
+  transition: opacity var(--roulette-fade) ease, transform 350ms ease-in-out;
+}
+
+.view-roulette--left .roulette-stage {
+  transform: translateX(25%);
+}
+
+.view-roulette--right .roulette-stage {
+  transform: translateX(-25%);
+}
+
+.view-roulette--left .roulette-wheel-svg,
+.view-roulette--right .roulette-wheel-svg {
+  width: min(48vw, 80vh);
 }
 
 .view-roulette--flat .roulette-stage {
@@ -1427,7 +1481,17 @@ button.hand-card:not(:disabled):hover {
 
 .roulette-table > .seat-slot {
   position: absolute;
-  inset: 0;
+  top: 0;
+  bottom: 0;
+  width: 50%;
+}
+
+.roulette-table > .seat-slot--left {
+  left: 0;
+}
+
+.roulette-table > .seat-slot--right {
+  right: 0;
 }
 
 .roulette-table > .rummy-centre {
@@ -1591,6 +1655,14 @@ button.hand-card:not(:disabled):hover {
   width: min(120vw, 80vh);
   max-width: none;
   height: auto;
+  transition: width 350ms ease-in-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .roulette-stage,
+  .roulette-wheel-svg {
+    transition: none;
+  }
 }
 
 .wheel-bowl {

@@ -167,7 +167,7 @@ export default function Roulette({ players, tilt, onSettle, onExit }: RoulettePr
   // wheel is never remounted, so switching between the two is just a change of
   // opacity and blur over an animation that carries straight on.
   return (
-    <main className={`view-roulette view-roulette--table${betting ? (active ? '' : ' view-roulette--flat') : ' view-roulette--spinning'}`}>
+    <main className={`view-roulette view-roulette--table${betting ? (active ? ` view-roulette--${tilt}` : ' view-roulette--flat') : ' view-roulette--spinning'}`}>
       <div className="roulette-stage" aria-hidden="true">
         <Wheel pocket={round.pocket} spinning={round.phase === 'spinning'} />
       </div>
