@@ -46,6 +46,7 @@ export function isRound(value: unknown): value is Round {
     (result.winnerId === null || result.winnerId === first.playerId || result.winnerId === second.playerId) &&
     Array.isArray(result.scores) && result.scores.length === 2 &&
     result.scores.every((entry, index) =>
+      typeof entry === 'object' && entry !== null &&
       entry.playerId === round.seats![index].playerId && typeof entry.score === 'number' && Number.isFinite(entry.score)) &&
     round.seats.every((seat: Seat) => seat.status === 'stood' || seat.status === 'bust')
 }

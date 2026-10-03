@@ -90,5 +90,7 @@ describe('isRound', () => {
     expect(isRound({ ...round, deck: [{ rank: 'Z', suit: 'spades' }] })).toBe(false)
     expect(isRound({ ...round, seats: round.seats.map(seat => ({ ...seat, status: 'playing' })) })).toBe(false)
     expect(isRound({ ...round, house: [], seats: [{ ...round.seats[0], status: 'playing' }] })).toBe(false)
+    const complete = stick(stick(round, 'a'), 'b')
+    expect(isRound({ ...complete, result: { winnerId: null, scores: [null, null] } })).toBe(false)
   })
 })
