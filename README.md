@@ -48,10 +48,12 @@ piles across the middle and each player's panel turned a quarter turn to face
 their own side — one player sits to the left of the device, the other to the
 right.
 
-The page is deliberately pinned to portrait, and the "Tilt setup" button asks
-for that lock (plus tilt access, where the browser requires permission). With
-the page locked, angling the device towards a player only changes the tilt
-reading, so the browser never spins the layout around mid-turn:
+Keep the device upright and turn on its portrait orientation lock. Angling the
+device towards a player then changes the tilt reading without rotating the
+page. If the page does rotate into landscape, a full-screen warning covers the
+game until it returns to portrait. On browsers that require motion permission,
+a separate full-screen prompt asks for it; the game stays covered until a tilt
+reading is received:
 
 - **Flat, or held level** — the device belongs to nobody and both hands stay
   face down.
@@ -63,10 +65,11 @@ wobbling hand doesn't flicker the cards open and shut. Because each panel is
 already turned to face its owner, the turn prompt, result and "Next hand"
 button all live inside the panels rather than in the middle strip.
 
-Where tilt isn't available — no sensor, or permission refused — each seat falls
-back to its own "Show cards" / "Hide cards" toggle, and cards go back face down
-as soon as the turn passes on. Reveals are never stored, so a refresh always
-comes back with hands face down.
+Where tilt isn't available — no sensor, or permission refused — the prompt
+allows another attempt or a return to game selection. There is no manual
+show/hide mode. The game stays mounted behind the prompts, so returning to
+portrait or granting permission doesn't abandon the hand. A refresh starts
+with hands face down until the device is tipped towards a player.
 
 ### Roulette
 
@@ -77,12 +80,11 @@ even money red/black, odd/even and high/low bets. Tap a spot to add the
 selected £1, £5 or £10 chip, press and hold a spot to take that stake back off,
 or use "Clear" to lift the lot. Nobody can stake more than the cash they hold.
 
-The page is pinned to portrait like the other table games, and the board is
+Keep the page in portrait like the other table games; the board is
 turned a quarter turn so it reads as a landscape betting layout facing whoever
 is betting. The wheel turns away behind the board the whole time, with the
-betting spots left slightly see-through so it shows through them. Where tilt is available, the board only accepts chips while the
-device is angled towards the player whose turn it is; without it the board is
-always live for the player named at the top.
+betting spots left slightly see-through so it shows through them. The board
+only accepts chips while the device is angled towards the player whose turn it is.
 
 Once both players have finished, the board fades away and the bets are listed
 underneath the wheel. The same wheel is used at the same size throughout and is

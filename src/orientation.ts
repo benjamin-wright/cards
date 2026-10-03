@@ -9,6 +9,11 @@ export type Tilt = 'flat' | 'left' | 'right'
 
 export type TiltAccess = 'unavailable' | 'prompt' | 'checking' | 'granted'
 
+export function deviceGate(portrait: boolean, access: TiltAccess): 'orientation' | 'tilt' | null {
+  if (!portrait) return 'orientation'
+  return access === 'granted' ? null : 'tilt'
+}
+
 export type DeviceView = {
   tilt: Tilt
   tiltAccess: TiltAccess
@@ -73,7 +78,10 @@ export function useDeviceView(): DeviceView {
     if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return
 
     const query = window.matchMedia(PORTRAIT)
-    const update = () => setPortrait(query.matches)
+    const update = () => {
+      setPortrait(query.matches)
+      if (!query.matches) setTilt('flat')
+    }
 
     update()
     query.addEventListener('change', update)
@@ -87,7 +95,7 @@ export function useDeviceView(): DeviceView {
       if (event.gamma === null || !Number.isFinite(event.gamma)) return
       const { gamma } = event
       setTiltAccess('granted')
-      setTilt(current => nextTilt(current, gamma))
+      setTilt(current => isPortrait() ? nextTilt(current, gamma) : 'flat')
     }
 
     window.addEventListener('deviceorientation', update)

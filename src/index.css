@@ -73,6 +73,13 @@ p {
   padding-right: env(safe-area-inset-right);
 }
 
+.table-game {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
 .device-gate {
   position: fixed;
   inset: 0;
@@ -754,10 +761,8 @@ button:disabled {
   padding: 40px 16px;
 }
 
-/* The table deliberately ignores the orientation media queries the blackjack
-   table uses. The page is pinned to portrait and each seat is turned a quarter
-   turn to face its own player, so angling the device towards someone changes
-   only the tilt reading and never re-flows the layout mid-turn. */
+/* The table ignores blackjack's orientation queries: each seat is turned to
+   face its player, while the gate covers the table if the page rotates. */
 .view-rummy--table {
   align-items: stretch;
   padding: 0;
@@ -1263,9 +1268,8 @@ button.hand-card:not(:disabled):hover {
   padding: 24px 16px;
 }
 
-/* Like the rummy table, the page stays pinned to portrait and the board is
-   turned a quarter turn instead, giving a landscape betting layout that faces
-   whichever player is placing their chips. */
+/* Like the rummy table, the board is turned to face the betting player, while
+   the gate covers the table if the page rotates. */
 .view-roulette--table {
   align-items: stretch;
   padding: 0;

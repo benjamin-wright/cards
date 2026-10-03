@@ -7,7 +7,7 @@ import Cribbage from './cribbage/Cribbage'
 import CrazyEights from './crazyeights/CrazyEights'
 import Roulette from './roulette/Roulette'
 import { games } from './games'
-import { useDeviceView } from './orientation'
+import { deviceGate, useDeviceView } from './orientation'
 import { isPlayerList, type Player, type Settlement } from './players'
 import { STORAGE_KEYS, clearState, usePersistentState } from './storage'
 
@@ -40,11 +40,12 @@ function TableGame({
   onExit: () => void
 }) {
   const { tilt, tiltAccess, portrait, enable } = useDeviceView()
-  const blocked = !portrait || tiltAccess !== 'granted'
+  const gate = deviceGate(portrait, tiltAccess)
+  const blocked = gate !== null
 
   return (
     <>
-      <div inert={blocked} aria-hidden={blocked}>
+      <div className="table-game" inert={blocked} aria-hidden={blocked}>
         {gameId === 'rummy' ? (
           <Rummy players={players} tilt={tilt} onExit={onExit} />
         ) : gameId === 'cribbage' ? (
@@ -57,7 +58,7 @@ function TableGame({
       </div>
       {blocked && (
         <div className="device-gate" role="dialog" aria-modal="true" aria-labelledby="device-gate-title">
-          {!portrait ? (
+          {gate === 'orientation' ? (
             <>
               <h1 id="device-gate-title">Turn your device upright and lock the orientation</h1>
               <p>Keep the screen in portrait so you can tilt the device towards each player.</p>
