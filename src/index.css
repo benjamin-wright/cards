@@ -396,50 +396,58 @@ button:disabled {
   padding: 40px 16px;
 }
 
-/* ─── Blackjack table (landscape, two players facing each other) ── */
+/* ─── Blackjack table ───────────────────────────────────────── */
 .view-blackjack--table {
-  padding: 12px;
-  gap: 12px;
-  justify-content: space-between;
-}
-
-.table {
-  flex: 1;
-  width: 100%;
-  display: grid;
-  grid-template-columns: 1fr;
-  grid-template-areas: 'bar' 'top' 'house' 'bottom';
-  align-items: center;
-  justify-items: center;
-  gap: 12px;
+  align-items: stretch;
+  padding: 0;
+  gap: 0;
   min-height: 0;
 }
 
-/* Groups the game bar with the house so a landscape layout can move both
-   into one side column, leaving the seat panels the full column height.
-   In portrait it's just a grouping wrapper — `display: contents` lets its
-   children (the bar and the house) take their own grid areas directly. */
-.table-side {
-  display: contents;
-}
-
-.game-bar {
-  grid-area: bar;
-}
-
-.seat-area {
+.blackjack-table {
+  position: relative;
+  flex: 1;
   width: 100%;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  min-height: 0;
+}
+
+.blackjack-centre {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
   display: flex;
+  flex-direction: column;
+  align-items: center;
   justify-content: center;
+  gap: 12px;
+  color: white;
+  pointer-events: none;
+  text-align: center;
 }
 
-.seat-area--top {
-  grid-area: top;
-  transform: rotate(180deg);
+.blackjack-centre button {
+  pointer-events: auto;
 }
 
-.seat-area--bottom {
-  grid-area: bottom;
+.blackjack-table[data-tilt='left'] .blackjack-centre {
+  transform: translateX(25%);
+}
+
+.blackjack-table[data-tilt='right'] .blackjack-centre {
+  transform: translateX(-25%);
+}
+
+.blackjack-table .seat-panel {
+  max-width: 100%;
+  max-height: 100%;
+  overflow-y: auto;
+}
+
+.blackjack-table .hand {
+  flex-wrap: wrap;
+  justify-content: center;
 }
 
 .seat-panel {
@@ -464,22 +472,6 @@ button:disabled {
   border-left-color: var(--red);
 }
 
-.seat-panel-row {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 10px;
-  width: 100%;
-}
-
-.seat-panel-info {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 10px;
-  width: 100%;
-}
-
 .seat-panel-header {
   display: flex;
   align-items: baseline;
@@ -497,107 +489,6 @@ button:disabled {
   font-weight: 700;
   color: var(--text-muted);
   white-space: nowrap;
-}
-
-.house-area {
-  grid-area: house;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 6px;
-  color: #fff;
-}
-
-.house-area h2 {
-  font-size: 0.8rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  color: rgba(255, 255, 255, 0.85);
-}
-
-.house-area .hint {
-  color: rgba(255, 255, 255, 0.75);
-}
-
-/* On a landscape screen there's little spare height, so the game bar and
-   house are grouped into one side column (`.table-side`, now a real flex
-   column instead of `display: contents`), leaving the other column's full
-   height for the two seat panels. Each seat panel also splits into a row —
-   raises on the left, cards in the middle, twist/stick on the right —
-   instead of stacking everything vertically. */
-@media (orientation: landscape) {
-  .table {
-    grid-template-columns: 1fr auto;
-    grid-template-rows: 1fr 1fr;
-    grid-template-areas: 'top side' 'bottom side';
-    align-items: stretch;
-    justify-items: stretch;
-    gap: 10px;
-  }
-
-  .seat-area {
-    align-items: center;
-  }
-
-  .table-side {
-    display: flex;
-    flex-direction: column;
-    grid-area: side;
-    height: 100%;
-  }
-
-  .game-bar {
-    flex-shrink: 0;
-  }
-
-  .house-area {
-    flex: 1;
-    justify-content: center;
-    padding: 0 8px;
-  }
-
-  .seat-panel {
-    max-width: none;
-    gap: 6px;
-    padding: 10px 16px;
-  }
-
-  .seat-panel-row {
-    flex-direction: row;
-    justify-content: center;
-    align-items: center;
-    gap: 14px;
-  }
-
-  .seat-panel-info {
-    flex: 1;
-    min-width: 0;
-  }
-
-  .seat-panel-row .bet-actions {
-    order: -1;
-    flex-direction: column;
-    flex-wrap: nowrap;
-    flex-shrink: 0;
-  }
-
-  .seat-panel-row .panel-actions {
-    order: 1;
-    flex-direction: column;
-    flex-wrap: nowrap;
-    flex-shrink: 0;
-  }
-
-  .house-area .hand,
-  .seat-panel .hand {
-    gap: 4px;
-  }
-
-  .house-area .hand-card,
-  .seat-panel .hand-card {
-    width: 40px;
-  }
 }
 
 .player-list {

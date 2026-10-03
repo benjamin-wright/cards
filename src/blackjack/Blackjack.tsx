@@ -1,245 +1,136 @@
-import type { ReactNode } from 'react'
 import type { Player } from '../players'
-import { MIN_PLAYERS } from '../players'
+import type { Tilt } from '../orientation'
 import { STORAGE_KEYS, usePersistentState } from '../storage'
-import { ANTE, affordableRaises, handScore, type Card } from './engine'
-import {
-  canAnte,
-  createRound,
-  finishRound,
-  isRound,
-  raiseBet,
-  stick,
-  twist,
-  type Result,
-  type Round,
-  type Seat,
-} from './round'
 import CardFace from '../views/CardFace'
-
-type BlackjackProps = {
-  players: Player[]
-  onSettle: (results: Result[]) => void
-  onExit: () => void
-}
+import RotatedSeat from '../views/RotatedSeat'
+import { handScore } from './engine'
+import { createRound, isRound, stick, twist, type Round, type Seat } from './round'
 
 type BlackjackState = {
-  round: Round | null
+  round: Round
+  scores: Record<string, number>
+  lastStarterId: string
 }
 
 function isBlackjackState(value: unknown): value is BlackjackState {
+  if (typeof value !== 'object' || value === null) return false
   const state = value as Partial<BlackjackState>
-  return typeof value === 'object' && value !== null && (state.round === null || isRound(state.round))
-}
-
-function GameBar({ onExit }: { onExit: () => void }) {
-  return (
-    <div className="game-bar">
-      <span className="game-bar-title">Blackjack</span>
-      <button type="button" className="btn-ghost" onClick={onExit}>
-        Exit
-      </button>
-    </div>
-  )
-}
-
-function Screen({ onExit, children }: { onExit: () => void; children: ReactNode }) {
-  return (
-    <main className="view-blackjack">
-      <GameBar onExit={onExit} />
-      {children}
-    </main>
-  )
-}
-
-function Hand({ cards, faceDown }: { cards: Card[]; faceDown: boolean }) {
-  return (
-    <span className="hand">
-      {cards.map((card, index) => (
-        <CardFace key={`${card.rank}-${card.suit}-${index}`} card={card} faceDown={faceDown} />
-      ))}
-    </span>
-  )
-}
-
-function seatMessage(seat: Seat, result: Result | null): string {
-  if (result !== null) {
-    const outcome = result.outcome === 'win' ? 'Won' : result.outcome === 'lose' ? 'Lost' : 'Draw'
-    const delta = result.delta === 0 ? '£0' : `${result.delta > 0 ? '+' : '-'}£${Math.abs(result.delta)}`
-    return `${outcome} ${delta}`
-  }
-  if (seat.status === 'bust') return `Bust on ${handScore(seat.cards)}`
-  if (seat.status === 'stood') return `Stuck on ${handScore(seat.cards)}`
-  return `Score ${handScore(seat.cards)}`
+  return isRound(state.round) && typeof state.lastStarterId === 'string' &&
+    typeof state.scores === 'object' && state.scores !== null && !Array.isArray(state.scores) &&
+    Object.values(state.scores).every(score => typeof score === 'number' && Number.isFinite(score) && score >= 0)
 }
 
 function SeatPanel({
   seat,
-  playable,
-  result,
+  round,
+  points,
   onTwist,
   onStick,
-  onRaise,
+  onDeal,
 }: {
   seat: Seat
-  playable: boolean
-  result: Result | null
+  round: Round
+  points: number
   onTwist: () => void
   onStick: () => void
-  onRaise: (amount: number) => void
+  onDeal: () => void
 }) {
-  const raises = playable && !seat.betLocked ? affordableRaises(seat.cash, seat.bet) : []
-
+  const active = round.turn === seat.playerId
+  const result = round.result
   return (
-    <section className={`seat-panel${result === null ? '' : ` seat-panel--${result.outcome}`}`}>
-      <div className="seat-panel-row">
-        <div className="seat-panel-info">
-          <header className="seat-panel-header">
-            <h2>{seat.name}</h2>
-            <span className="seat-panel-status">{seatMessage(seat, result)}</span>
-          </header>
-
-          <Hand cards={seat.cards} faceDown={false} />
-
-          {result === null ? (
-            <p className="hint">Bet £{seat.bet} of £{seat.cash}</p>
-          ) : (
-            <p className="hint">
-              Bet £{result.bet} — Total £{result.cashAfter}
-            </p>
-          )}
+    <section className="seat-panel">
+      <header className="seat-panel-header">
+        <h2>{seat.name}</h2>
+        <span className="seat-panel-status">{points} points</span>
+      </header>
+      <span className="hand">
+        {seat.cards.map(card => (
+          <CardFace key={`${card.rank}-${card.suit}`} card={card} />
+        ))}
+      </span>
+      <p className="hint">
+        {result !== null
+          ? `${result.winnerId === seat.playerId ? 'Won +1 point' : result.winnerId === null ? 'Draw' : 'Lost'} — ${handScore(seat.cards)}`
+          : seat.status === 'bust'
+            ? `Bust on ${handScore(seat.cards)}`
+            : seat.status === 'stood'
+              ? `Stuck on ${handScore(seat.cards)}`
+              : active
+                ? `Your turn — ${handScore(seat.cards)}`
+                : 'Waiting for your turn'}
+      </p>
+      {active && (
+        <div className="panel-actions">
+          <button type="button" className="btn-primary" onClick={onTwist}>Twist</button>
+          <button type="button" className="btn-secondary" onClick={onStick}>Stick</button>
         </div>
-
-        {result === null && raises.length > 0 && (
-          <div className="bet-actions">
-            <span className="bet-label">Raise:</span>
-            {raises.map(amount => (
-              <button key={amount} type="button" className="btn-secondary" onClick={() => onRaise(amount)}>
-                +£{amount}
-              </button>
-            ))}
-          </div>
-        )}
-
-        {result === null && (
-          <div className="panel-actions">
-            <button type="button" className="btn-primary" disabled={!playable} onClick={onTwist}>
-              Twist
-            </button>
-            <button type="button" className="btn-secondary" disabled={!playable} onClick={onStick}>
-              Stick
-            </button>
-          </div>
-        )}
-      </div>
+      )}
+      {result !== null && (
+        <button type="button" className="btn-primary" onClick={onDeal}>Next hand</button>
+      )}
     </section>
   )
 }
 
-function deal(players: Player[]): BlackjackState {
-  const able = players.filter(canAnte)
-  return {
-    round: able.length >= MIN_PLAYERS ? createRound(able) : null,
-  }
-}
-
-export default function Blackjack({ players, onSettle, onExit }: BlackjackProps) {
+export default function Blackjack({ players, tilt, onExit }: {
+  players: Player[]
+  tilt: Tilt
+  onExit: () => void
+}) {
   const [state, setState] = usePersistentState<BlackjackState>(
     STORAGE_KEYS.blackjack,
-    () => deal(players),
+    () => ({
+      round: createRound(players),
+      scores: Object.fromEntries(players.map(player => [player.id, 0])),
+      lastStarterId: players[0].id,
+    }),
     isBlackjackState,
   )
+  const { round, scores } = state
+  const [left, right] = round.seats
 
-  const { round } = state
-  const setRound = (next: Round) => setState(current => ({ ...current, round: next }))
-
-  if (round === null) {
-    return (
-      <Screen onExit={onExit}>
-        <header className="panel-header">
-          <h1>Not enough players</h1>
-          <p className="tagline">
-            Both players need £{ANTE} to cover the entry fee.
-          </p>
-        </header>
-        <div className="panel-actions">
-          <button type="button" className="btn-primary" onClick={onExit}>
-            Back to games
-          </button>
-        </div>
-      </Screen>
-    )
+  const act = (next: Round) => {
+    setState(current => {
+      if (current.round !== round) return current
+      const winnerId = next.result?.winnerId
+      return {
+        ...current,
+        round: next,
+        scores: round.result === null && winnerId
+          ? { ...current.scores, [winnerId]: (current.scores[winnerId] ?? 0) + 1 }
+          : current.scores,
+      }
+    })
   }
 
-  const seats = round.seats
-  const [bottom, top] = seats
-  const results = round.results
-
-  const revealHouse = () => {
-    const settled = finishRound(round)
-    setRound(settled)
-    if (settled.results !== null) {
-      onSettle(settled.results)
-    }
+  const deal = () => {
+    setState(current => {
+      if (current.round.result === null) return current
+      const starterId = current.lastStarterId === left.playerId ? right.playerId : left.playerId
+      return { ...current, round: createRound(players, starterId), lastStarterId: starterId }
+    })
   }
 
-  const resultFor = (playerId: string): Result | null =>
-    results === null ? null : results.find(entry => entry.playerId === playerId) ?? null
+  const panelFor = (seat: Seat) => (
+    <SeatPanel
+      seat={seat}
+      round={round}
+      points={scores[seat.playerId] ?? 0}
+      onTwist={() => act(twist(round, seat.playerId))}
+      onStick={() => act(stick(round, seat.playerId))}
+      onDeal={deal}
+    />
+  )
 
-  // Both seats play simultaneously: the house waits until both have stood or
-  // gone bust, then it plays itself out. The same table layout is reused for
-  // the summary so revealing the house doesn't jump to a different screen.
-  // The game bar and house are grouped in `.table-side` so a landscape layout
-  // can dedicate one full-height column to just the two seat panels.
   return (
     <main className="view-blackjack view-blackjack--table">
-      <div className="table">
-        <div className="table-side">
-          <GameBar onExit={onExit} />
-
-          <div className="house-area">
-            <h2>House{round.phase === 'summary' ? ` — ${handScore(round.house)}` : ''}</h2>
-            <Hand cards={round.house} faceDown={round.phase === 'player'} />
-            {round.phase === 'house' && (
-              <button type="button" className="btn-primary" onClick={revealHouse}>
-                Reveal the house
-              </button>
-            )}
-            {round.phase === 'player' && <p className="hint">Waiting for both players to finish</p>}
-            {round.phase === 'summary' && (
-              <div className="panel-actions">
-                <button type="button" className="btn-primary" onClick={() => setState(deal(players))}>
-                  Play another hand
-                </button>
-                <button type="button" className="btn-secondary" onClick={onExit}>
-                  Back to games
-                </button>
-              </div>
-            )}
-          </div>
+      <div className="blackjack-table" data-tilt={tilt}>
+        <RotatedSeat degrees={90} revealed={tilt === 'left'}>{panelFor(left)}</RotatedSeat>
+        <div className="blackjack-centre">
+          <button type="button" className="btn-ghost" onClick={onExit}>Exit</button>
+          <span>{round.result === null ? 'Tilt towards the current player' : 'Hand complete'}</span>
         </div>
-
-        <div className="seat-area seat-area--top">
-          <SeatPanel
-            seat={top}
-            playable={round.phase === 'player' && top.status === 'playing'}
-            result={resultFor(top.playerId)}
-            onTwist={() => setRound(twist(round, top.playerId))}
-            onStick={() => setRound(stick(round, top.playerId))}
-            onRaise={amount => setRound(raiseBet(round, top.playerId, amount))}
-          />
-        </div>
-
-        <div className="seat-area seat-area--bottom">
-          <SeatPanel
-            seat={bottom}
-            playable={round.phase === 'player' && bottom.status === 'playing'}
-            result={resultFor(bottom.playerId)}
-            onTwist={() => setRound(twist(round, bottom.playerId))}
-            onStick={() => setRound(stick(round, bottom.playerId))}
-            onRaise={amount => setRound(raiseBet(round, bottom.playerId, amount))}
-          />
-        </div>
+        <RotatedSeat degrees={-90} revealed={tilt === 'right'}>{panelFor(right)}</RotatedSeat>
       </div>
     </main>
   )

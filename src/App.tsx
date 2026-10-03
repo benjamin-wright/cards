@@ -46,7 +46,9 @@ function TableGame({
   return (
     <>
       <div className="table-game" inert={blocked} aria-hidden={blocked}>
-        {gameId === 'rummy' ? (
+        {gameId === 'blackjack' ? (
+          <Blackjack players={players} tilt={tilt} onExit={onExit} />
+        ) : gameId === 'rummy' ? (
           <Rummy players={players} tilt={tilt} onExit={onExit} />
         ) : gameId === 'cribbage' ? (
           <Cribbage players={players} tilt={tilt} onExit={onExit} />
@@ -153,9 +155,7 @@ function App() {
           onSelect={selected => setState(current => ({ ...current, gameId: selected.id }))}
           onEditPlayers={editPlayers}
         />
-      ) : game.id === 'blackjack' ? (
-        <Blackjack players={players} onSettle={settle} onExit={leaveGame} />
-      ) : ['rummy', 'cribbage', 'crazy-eights', 'roulette'].includes(game.id) ? (
+      ) : ['blackjack', 'rummy', 'cribbage', 'crazy-eights', 'roulette'].includes(game.id) ? (
         <TableGame gameId={game.id} players={players} onSettle={settle} onExit={leaveGame} />
       ) : (
         <main className="view-game-placeholder">
