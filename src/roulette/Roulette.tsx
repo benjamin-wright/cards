@@ -162,10 +162,8 @@ export default function Roulette({ players, tilt, onSettle, onExit }: RoulettePr
   /** The last player still to bet sets the wheel going. */
   const lastToBet = round.seats.every((entry, index) => index === turn || entry.done)
 
-  // One wheel sits behind every phase at a fixed size, and the betting board
-  // and the spin panel are cross-faded over it. Nothing is translated and the
-  // wheel is never remounted, so switching between the two is just a change of
-  // opacity and blur over an animation that carries straight on.
+  // The wheel stays mounted behind every phase while the board and spin panel
+  // cross-fade; it shifts aside only while a player's betting seat is open.
   return (
     <main className={`view-roulette view-roulette--table${betting ? (active ? ` view-roulette--${tilt}` : ' view-roulette--flat') : ' view-roulette--spinning'}`}>
       <div className="roulette-stage" aria-hidden="true">

@@ -1430,9 +1430,8 @@ button.hand-card:not(:disabled):hover {
   opacity: 1;
 }
 
-/* The board and the spin panel are stacked on top of the wheel and cross-faded
-   between phases. Only the opacity and the blur over the wheel move: nothing is
-   translated, so the wheel carries on turning in place behind the change. */
+/* The board and the spin panel cross-fade over the mounted wheel; the wheel
+   shifts sideways only when a private betting seat is revealed. */
 .roulette-layer {
   position: absolute;
   inset: 0;
