@@ -1505,12 +1505,20 @@ button.hand-card:not(:disabled):hover {
   left: 8px;
 }
 
-.roulette-table > .rummy-centre {
+.view-roulette--table .roulette-table > .rummy-centre {
   position: absolute;
-  bottom: 0;
+  inset: 0;
   width: 100%;
   z-index: 2;
+  pointer-events: none;
+  background: none;
   transition: opacity 350ms ease-in-out, visibility 0s;
+}
+
+.roulette-table > .rummy-centre .pile-label {
+  padding: 6px 10px;
+  border-radius: var(--radius);
+  background: rgba(0, 0, 0, 0.55);
 }
 
 .view-roulette--left .roulette-table > .rummy-centre,
@@ -1555,11 +1563,6 @@ button.hand-card:not(:disabled):hover {
 
 .roulette-seat-header .seat-panel-status {
   color: rgba(255, 255, 255, 0.8);
-}
-
-.view-roulette--table .rummy-centre {
-  position: relative;
-  background: rgba(0, 0, 0, 0.35);
 }
 
 .roulette-seat-header .btn-primary,
