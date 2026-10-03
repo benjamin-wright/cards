@@ -1493,6 +1493,18 @@ button.hand-card:not(:disabled):hover {
   right: 0;
 }
 
+.roulette-exit {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 2;
+}
+
+.view-roulette--right .roulette-exit {
+  right: auto;
+  left: 8px;
+}
+
 .roulette-table > .rummy-centre {
   position: absolute;
   bottom: 0;

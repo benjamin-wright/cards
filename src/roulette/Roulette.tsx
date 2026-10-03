@@ -231,10 +231,10 @@ export default function Roulette({ players, tilt, onSettle, onExit }: RoulettePr
             </section>
           </RotatedSeat>
 
+          <button type="button" className="btn-ghost roulette-exit" onClick={onExit}>
+            Exit
+          </button>
           <div className="rummy-centre">
-            <button type="button" className="btn-ghost" disabled={!betting} onClick={onExit}>
-              Exit
-            </button>
             <span className="pile-label">
               {seat.name} betting ({round.seats.filter(entry => entry.done).length + 1} of {round.seats.length})
             </span>
