@@ -654,8 +654,7 @@ button:disabled {
   padding: 40px 16px;
 }
 
-/* The table ignores blackjack's orientation queries: each seat is turned to
-   face its player, while the gate covers the table if the page rotates. */
+/* Each table seat faces its player; the gate covers the table if the page rotates. */
 .view-rummy--table {
   align-items: stretch;
   padding: 0;

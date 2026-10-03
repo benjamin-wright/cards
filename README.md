@@ -14,15 +14,16 @@ selection (which abandons the hand in progress).
 
 ### Blackjack
 
-Two cards are dealt face down to each player and the house, with the house
-dealt last. Each player views their own cards, may
-raise their £1 entry bet using the £1, £10 and £100 buttons (press them as
-often as you like, up to the cash you hold), then twists or sticks. Betting
-closes for that player as soon as they twist. Aces
-count as 1 or 11 in the player's favour, over 21 is bust, and the house always
-twists below 15 and sticks on 15 or more. Beat the house to double your bet,
-lose it if the house wins, or get it back on a draw. Every hand ends with all
-cards revealed and a summary of winnings, losses and new totals.
+Two cards are dealt privately to each player. Players take turns twisting
+(drawing a card) or sticking (keeping their hand); going over 21 ends a turn
+automatically. Aces count as 1 or 11, whichever helps without going bust.
+The higher non-bust hand earns one point; equal hands or two bust hands draw.
+Scores carry over between hands, and the starting player alternates. There
+is no house or betting, and cash is unaffected.
+
+Like the other table games, the device lies flat between players in portrait
+with their seats facing left and right. Tip it towards a player to reveal
+only their own hand and controls; both hands stay hidden while flat.
 
 ### Rummy
 
