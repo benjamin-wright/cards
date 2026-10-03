@@ -1,6 +1,6 @@
 import { useEffect, useState, type ReactNode } from 'react'
 import type { Player } from '../players'
-import { useDeviceView } from '../orientation'
+import type { Tilt } from '../orientation'
 import { STORAGE_KEYS, usePersistentState } from '../storage'
 import RotatedSeat from '../views/RotatedSeat'
 import BettingBoard, { type BoardStake } from './BettingBoard'
@@ -81,8 +81,7 @@ function BetSummary({ seats }: { seats: Seat[] }) {
   )
 }
 
-export default function Roulette({ players, onSettle, onExit }: RouletteProps) {
-  const { tilt, tiltAccess, portrait, locked, canLock, enable } = useDeviceView()
+export default function Roulette({ players, tilt, onSettle, onExit }: RouletteProps & { tilt: Tilt }) {
   const [state, setState] = usePersistentState<RouletteState>(
     STORAGE_KEYS.roulette,
     () => ({ round: createRound(players) }),
@@ -157,13 +156,11 @@ export default function Roulette({ players, onSettle, onExit }: RouletteProps) {
   // One player sits to the left of the device, the other to the right, so the
   // board is turned a quarter turn towards whoever is betting.
   const degrees = turn === 0 ? 90 : -90
-  const tilted = tiltAccess === 'granted'
   const facing = tilt === 'left' ? 0 : tilt === 'right' ? 1 : null
-  const active = betting && (!tilted || facing === turn)
+  const active = betting && facing === turn
   const free = remaining(seat)
   /** The last player still to bet sets the wheel going. */
   const lastToBet = round.seats.every((entry, index) => index === turn || entry.done)
-  const setupNeeded = tiltAccess === 'prompt' || (canLock && !locked)
 
   // One wheel sits behind every phase at a fixed size, and the betting board
   // and the spin panel are cross-faded over it. Nothing is translated and the
@@ -243,13 +240,6 @@ export default function Roulette({ players, onSettle, onExit }: RouletteProps) {
             <span className="pile-label">
               {seat.name} betting ({round.seats.filter(entry => entry.done).length + 1} of {round.seats.length})
             </span>
-            {setupNeeded ? (
-              <button type="button" className="btn-secondary" disabled={!betting} onClick={enable}>
-                Tilt setup
-              </button>
-            ) : (
-              !portrait && <span className="pile-label">Turn upright</span>
-            )}
           </div>
         </div>
       </div>

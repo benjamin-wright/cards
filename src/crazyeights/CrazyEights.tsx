@@ -3,7 +3,7 @@ import type { Card, Suit } from '../cards'
 import { cardKey } from '../cards'
 import { SUIT_SYMBOLS } from '../games'
 import type { Player } from '../players'
-import { useDeviceView } from '../orientation'
+import type { Tilt } from '../orientation'
 import { STORAGE_KEYS, usePersistentState } from '../storage'
 import CardFace from '../views/CardFace'
 import RotatedSeat from '../views/RotatedSeat'
@@ -137,9 +137,7 @@ function SeatPanel({
   score,
   round,
   visible,
-  canToggle,
   matchWinnerName,
-  onToggle,
   onDraw,
   onPass,
   onPlay,
@@ -154,9 +152,7 @@ function SeatPanel({
   score: number
   round: Round
   visible: boolean
-  canToggle: boolean
   matchWinnerName: string | null
-  onToggle: () => void
   onDraw: () => void
   onPass: () => void
   onPlay: () => void
@@ -210,12 +206,6 @@ function SeatPanel({
           <SuitPicker onChoose={onChooseSuit} />
         ) : (
           <div className="panel-actions">
-            {canToggle && (
-              <button type="button" className="btn-secondary" onClick={onToggle}>
-                {visible ? 'Hide cards' : 'Show cards'}
-              </button>
-            )}
-
             {active && visible && (
               <>
                 <button type="button" className="btn-primary" disabled={!playable} onClick={onPlay}>
@@ -250,9 +240,7 @@ function SeatPanel({
       )}
 
       {result === null && active && !visible && (
-        <p className="hint">
-          {canToggle ? 'Show your cards to take your turn' : 'Tip the device towards you to see your hand'}
-        </p>
+        <p className="hint">Tip the device towards you to see your hand</p>
       )}
     </section>
   )
@@ -267,8 +255,7 @@ function Screen({ onExit, children }: { onExit: () => void; children: ReactNode 
   )
 }
 
-export default function CrazyEights({ players, onExit }: CrazyEightsProps) {
-  const { tilt, tiltAccess, portrait, locked, canLock, enable } = useDeviceView()
+export default function CrazyEights({ players, tilt, onExit }: CrazyEightsProps & { tilt: Tilt }) {
   const [state, setState] = usePersistentState<CrazyEightsState>(
     STORAGE_KEYS.crazyEights,
     () => ({
@@ -278,8 +265,6 @@ export default function CrazyEights({ players, onExit }: CrazyEightsProps) {
     }),
     isCrazyEightsState,
   )
-  // Reveals reset on refresh, so a shared device never comes back showing a hand.
-  const [revealed, setRevealed] = useState<string[]>([])
   const [selected, setSelected] = useState<Card | null>(null)
   const [choosingSuitFor, setChoosingSuitFor] = useState<Card | null>(null)
 
@@ -319,12 +304,6 @@ export default function CrazyEights({ players, onExit }: CrazyEightsProps) {
     setSelected(null)
     setChoosingSuitFor(null)
     setRound(next)
-    if (next.result !== null) {
-      setRevealed(next.hands.map(hand => hand.playerId))
-    } else if (next.turn !== round.turn) {
-      // Hands go back face down as soon as the turn passes over.
-      setRevealed(current => current.filter(playerId => playerId !== round.turn))
-    }
   }
 
   const playSelected = (playerId: string, card: Card, chosenSuit?: Suit) => {
@@ -338,7 +317,6 @@ export default function CrazyEights({ players, onExit }: CrazyEightsProps) {
   const deal = () => {
     setSelected(null)
     setChoosingSuitFor(null)
-    setRevealed([])
     setState(current => {
       const starter = opponentOf(round, current.lastStarterId ?? round.hands[0].playerId).playerId
       return { ...current, round: createRound(players, starter), lastStarterId: starter }
@@ -348,7 +326,6 @@ export default function CrazyEights({ players, onExit }: CrazyEightsProps) {
   const newGame = () => {
     setSelected(null)
     setChoosingSuitFor(null)
-    setRevealed([])
     setState({
       round: createRound(players, players[0]?.id),
       scores: Object.fromEntries(players.map(player => [player.id, 0])),
@@ -356,27 +333,12 @@ export default function CrazyEights({ players, onExit }: CrazyEightsProps) {
     })
   }
 
-  // The page stays in portrait and each seat is turned a quarter turn to face
-  // its own player, so angling the device towards someone only moves the tilt
-  // reading — the browser never spins the layout out from under them.
   const [left, right] = round.hands
-  const tilted = tiltAccess === 'granted'
   const facing = tilt === 'left' ? left : tilt === 'right' ? right : null
 
   const isVisible = (hand: Hand) => {
     if (result !== null) return true
-    if (tilted) return facing?.playerId === hand.playerId
-    return revealed.includes(hand.playerId)
-  }
-
-  const toggle = (hand: Hand) => {
-    setSelected(null)
-    setChoosingSuitFor(null)
-    setRevealed(current =>
-      current.includes(hand.playerId)
-        ? current.filter(entry => entry !== hand.playerId)
-        : [...current, hand.playerId],
-    )
+    return facing?.playerId === hand.playerId
   }
 
   const matchWinner = Object.entries(scores).find(([, points]) => points >= TARGET_SCORE)
@@ -388,9 +350,7 @@ export default function CrazyEights({ players, onExit }: CrazyEightsProps) {
       score={scores[hand.playerId] ?? 0}
       round={round}
       visible={isVisible(hand)}
-      canToggle={!tilted && result === null}
       matchWinnerName={matchWinnerName}
-      onToggle={() => toggle(hand)}
       onDraw={() => act(draw(round, hand.playerId))}
       onPass={() => act(pass(round, hand.playerId))}
       onPlay={() => selected !== null && playSelected(hand.playerId, selected)}
@@ -404,7 +364,6 @@ export default function CrazyEights({ players, onExit }: CrazyEightsProps) {
   )
 
   const topCard = topOfDiscard(round)
-  const setupNeeded = tiltAccess === 'prompt' || (canLock && !locked)
 
   return (
     <main className="view-rummy view-rummy--table">
@@ -434,13 +393,6 @@ export default function CrazyEights({ players, onExit }: CrazyEightsProps) {
             )}
           </div>
 
-          {setupNeeded ? (
-            <button type="button" className="btn-secondary" onClick={enable}>
-              Tilt setup
-            </button>
-          ) : (
-            !portrait && <span className="pile-label">Turn upright</span>
-          )}
         </div>
 
         <RotatedSeat degrees={-90}>{panelFor(right)}</RotatedSeat>

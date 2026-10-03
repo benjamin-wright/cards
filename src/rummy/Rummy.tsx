@@ -3,7 +3,7 @@ import type { Card } from '../cards'
 import { cardKey } from '../cards'
 import { SUIT_SYMBOLS } from '../games'
 import type { Player } from '../players'
-import { useDeviceView } from '../orientation'
+import type { Tilt } from '../orientation'
 import { STORAGE_KEYS, usePersistentState } from '../storage'
 import CardFace from '../views/CardFace'
 import RotatedSeat from '../views/RotatedSeat'
@@ -203,9 +203,7 @@ function SeatPanel({
   score,
   round,
   visible,
-  canToggle,
   matchWinnerName,
-  onToggle,
   onDrawStock,
   onDrawDiscard,
   onDiscard,
@@ -220,9 +218,7 @@ function SeatPanel({
   score: number
   round: Round
   visible: boolean
-  canToggle: boolean
   matchWinnerName: string | null
-  onToggle: () => void
   onDrawStock: () => void
   onDrawDiscard: () => void
   onDiscard: () => void
@@ -283,12 +279,6 @@ function SeatPanel({
           nobody has to read anything sideways. */}
       {result === null ? (
         <div className="panel-actions">
-          {canToggle && (
-            <button type="button" className="btn-secondary" onClick={onToggle}>
-              {visible ? 'Hide cards' : 'Show cards'}
-            </button>
-          )}
-
           {visible && knockableNow && (
             <button type="button" className="btn-secondary" onClick={onKnockNow}>
               {layout.deadwoodValue === 0 ? 'Gin' : `Knock on ${layout.deadwoodValue}`}
@@ -341,9 +331,7 @@ function SeatPanel({
         <p className="seat-panel-result">{matchWinnerName} wins the game!</p>
       )}
       {result === null && active && !visible && (
-        <p className="hint">
-          {canToggle ? 'Show your cards to take your turn' : 'Tip the device towards you to see your hand'}
-        </p>
+        <p className="hint">Tip the device towards you to see your hand</p>
       )}
       {result === null && active && visible && round.phase === 'discard' && selected === null && (
         <p className="hint">Tap a card to discard it (knock at {KNOCK_LIMIT} deadwood or less)</p>
@@ -361,8 +349,7 @@ function Screen({ onExit, children }: { onExit: () => void; children: ReactNode 
   )
 }
 
-export default function Rummy({ players, onExit }: RummyProps) {
-  const { tilt, tiltAccess, portrait, locked, canLock, enable } = useDeviceView()
+export default function Rummy({ players, tilt, onExit }: RummyProps & { tilt: Tilt }) {
   const [state, setState] = usePersistentState<RummyState>(
     STORAGE_KEYS.rummy,
     () => ({
@@ -372,8 +359,6 @@ export default function Rummy({ players, onExit }: RummyProps) {
     }),
     isRummyState,
   )
-  // Reveals reset on refresh, so a shared device never comes back showing a hand.
-  const [revealed, setRevealed] = useState<string[]>([])
   const [selected, setSelected] = useState<Card | null>(null)
 
   const { round, scores } = state
@@ -414,17 +399,10 @@ export default function Rummy({ players, onExit }: RummyProps) {
   const act = (next: Round) => {
     setSelected(null)
     setRound(next)
-    if (next.result !== null) {
-      setRevealed(next.hands.map(hand => hand.playerId))
-    } else if (next.turn !== round.turn) {
-      // Hands go back face down as soon as the turn passes over.
-      setRevealed(current => current.filter(playerId => playerId !== round.turn))
-    }
   }
 
   const deal = () => {
     setSelected(null)
-    setRevealed([])
     setState(current => {
       const starter = opponentOf(round, current.lastStarterId ?? round.hands[0].playerId).playerId
       return { ...current, round: createRound(players, starter), lastStarterId: starter }
@@ -433,7 +411,6 @@ export default function Rummy({ players, onExit }: RummyProps) {
 
   const newGame = () => {
     setSelected(null)
-    setRevealed([])
     setState({
       round: createRound(players, players[0]?.id),
       scores: Object.fromEntries(players.map(player => [player.id, 0])),
@@ -441,26 +418,12 @@ export default function Rummy({ players, onExit }: RummyProps) {
     })
   }
 
-  // The page stays in portrait and each seat is turned a quarter turn to face
-  // its own player, so angling the device towards someone only moves the tilt
-  // reading — the browser never spins the layout out from under them.
   const [left, right] = round.hands
-  const tilted = tiltAccess === 'granted'
   const facing = tilt === 'left' ? left : tilt === 'right' ? right : null
 
   const isVisible = (hand: Hand) => {
     if (result !== null) return true
-    if (tilted) return facing?.playerId === hand.playerId
-    return revealed.includes(hand.playerId)
-  }
-
-  const toggle = (hand: Hand) => {
-    setSelected(null)
-    setRevealed(current =>
-      current.includes(hand.playerId)
-        ? current.filter(entry => entry !== hand.playerId)
-        : [...current, hand.playerId],
-    )
+    return facing?.playerId === hand.playerId
   }
 
   const matchWinner = Object.entries(scores).find(([, points]) => points >= TARGET_SCORE)
@@ -472,9 +435,7 @@ export default function Rummy({ players, onExit }: RummyProps) {
       score={scores[hand.playerId] ?? 0}
       round={round}
       visible={isVisible(hand)}
-      canToggle={!tilted && result === null}
       matchWinnerName={matchWinnerName}
-      onToggle={() => toggle(hand)}
       onDrawStock={() => act(drawFromStock(round, hand.playerId))}
       onDrawDiscard={() => act(drawFromDiscard(round, hand.playerId))}
       onDiscard={() => selected !== null && act(discard(round, hand.playerId, selected))}
@@ -488,7 +449,6 @@ export default function Rummy({ players, onExit }: RummyProps) {
   )
 
   const topCard = topOfDiscard(round)
-  const setupNeeded = tiltAccess === 'prompt' || (canLock && !locked)
 
   return (
     <main className="view-rummy view-rummy--table">
@@ -512,13 +472,6 @@ export default function Rummy({ players, onExit }: RummyProps) {
             </div>
           </div>
 
-          {setupNeeded ? (
-            <button type="button" className="btn-secondary" onClick={enable}>
-              Tilt setup
-            </button>
-          ) : (
-            !portrait && <span className="pile-label">Turn upright</span>
-          )}
         </div>
 
         <RotatedSeat degrees={-90}>{panelFor(right)}</RotatedSeat>
