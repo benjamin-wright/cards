@@ -2,7 +2,7 @@ import { useState, type ReactNode } from 'react'
 import type { Card } from '../cards'
 import { cardKey } from '../cards'
 import type { Player } from '../players'
-import { useDeviceView } from '../orientation'
+import type { Tilt } from '../orientation'
 import { STORAGE_KEYS, usePersistentState } from '../storage'
 import CardFace from '../views/CardFace'
 import RotatedSeat from '../views/RotatedSeat'
@@ -104,8 +104,6 @@ function SeatPanel({
   hand,
   round,
   visible,
-  canToggle,
-  onToggle,
   selectedCards,
   onSelectCard,
   onConfirmDiscard,
@@ -117,8 +115,6 @@ function SeatPanel({
   hand: HandState
   round: Round
   visible: boolean
-  canToggle: boolean
-  onToggle: () => void
   selectedCards: Card[]
   onSelectCard: (card: Card) => void
   onConfirmDiscard: () => void
@@ -184,12 +180,6 @@ function SeatPanel({
       )}
 
       <div className="panel-actions">
-        {canToggle && round.phase !== 'summary' && (
-          <button type="button" className="btn-secondary" onClick={onToggle}>
-            {visible ? 'Hide cards' : 'Show cards'}
-          </button>
-        )}
-
         {isDiscarding && visible && (
           <button
             type="button"
@@ -230,8 +220,7 @@ function Screen({ onExit, children }: { onExit: () => void; children: ReactNode 
   )
 }
 
-export default function Cribbage({ players, onExit }: CribbageProps) {
-  const { tilt, tiltAccess, portrait, locked, canLock, enable } = useDeviceView()
+export default function Cribbage({ players, tilt, onExit }: CribbageProps & { tilt: Tilt }) {
   const [state, setState] = usePersistentState<CribbageState>(
     STORAGE_KEYS.cribbage,
     () => ({
@@ -241,7 +230,6 @@ export default function Cribbage({ players, onExit }: CribbageProps) {
     isCribbageState,
   )
 
-  const [revealed, setRevealed] = useState<string[]>([])
   const [selectedCards, setSelectedCards] = useState<Card[]>([])
 
   const { round } = state
@@ -298,7 +286,6 @@ export default function Cribbage({ players, onExit }: CribbageProps) {
 
   const handleDealNextHand = () => {
     setSelectedCards([])
-    setRevealed([])
     const nextDealerId = round.nonDealerId
     setState(current => ({
       round: createRound(players, nextDealerId, current.round?.scores),
@@ -308,7 +295,6 @@ export default function Cribbage({ players, onExit }: CribbageProps) {
 
   const handleNewGame = () => {
     setSelectedCards([])
-    setRevealed([])
     setState({
       round: createRound(players, players[0]?.id),
       lastStarterId: players[0]?.id ?? null,
@@ -316,22 +302,11 @@ export default function Cribbage({ players, onExit }: CribbageProps) {
   }
 
   const [left, right] = round.hands
-  const tilted = tiltAccess === 'granted'
   const facing = tilt === 'left' ? left : tilt === 'right' ? right : null
 
   const isVisible = (hand: HandState) => {
     if (round.phase === 'show' || round.phase === 'summary') return true
-    if (tilted) return facing?.playerId === hand.playerId
-    return revealed.includes(hand.playerId)
-  }
-
-  const toggleVisible = (hand: HandState) => {
-    setSelectedCards([])
-    setRevealed(current =>
-      current.includes(hand.playerId)
-        ? current.filter(id => id !== hand.playerId)
-        : [...current, hand.playerId],
-    )
+    return facing?.playerId === hand.playerId
   }
 
   const scorePopupContent =
@@ -360,8 +335,6 @@ export default function Cribbage({ players, onExit }: CribbageProps) {
       hand={hand}
       round={round}
       visible={isVisible(hand)}
-      canToggle={!tilted}
-      onToggle={() => toggleVisible(hand)}
       selectedCards={selectedCards}
       onSelectCard={handleSelectCard}
       onConfirmDiscard={() => handleConfirmDiscard(hand.playerId)}
@@ -372,7 +345,6 @@ export default function Cribbage({ players, onExit }: CribbageProps) {
     />
   )
 
-  const setupNeeded = tiltAccess === 'prompt' || (canLock && !locked)
 
   return (
     <main className="view-cribbage view-cribbage--table">
@@ -442,14 +414,6 @@ export default function Cribbage({ players, onExit }: CribbageProps) {
             </div>
 
             <div className="cribbage-controls">
-              {setupNeeded ? (
-                <button type="button" className="btn-secondary" onClick={enable}>
-                  Tilt setup
-                </button>
-              ) : (
-                !portrait && <span className="pile-label">Turn upright</span>
-              )}
-
               <button type="button" className="btn-ghost" onClick={onExit}>
                 Exit
               </button>
