@@ -1348,6 +1348,10 @@ button.hand-card:not(:disabled):hover {
   transition: opacity var(--roulette-fade) ease;
 }
 
+.view-roulette--flat .roulette-stage {
+  opacity: 1;
+}
+
 .view-roulette--spinning .roulette-stage {
   opacity: 1;
 }
@@ -1382,6 +1386,10 @@ button.hand-card:not(:disabled):hover {
   align-items: center;
   gap: 16px;
   padding: 24px 16px 0;
+  backdrop-filter: blur(0);
+}
+
+.view-roulette--flat .roulette-layer--board {
   backdrop-filter: blur(0);
 }
 
