@@ -12,6 +12,11 @@ Game state is kept in local storage, so refreshing the page resumes wherever
 you left off, and every game screen has an "Exit" button back to game
 selection (which abandons the hand in progress).
 
+In Crazy Eights, players keep their moves private until a finished hand is
+revealed with **Show hands** on a flat device. In cribbage, discards and card
+choices happen in private seats; lay the device flat to inspect the public
+board, reveal scored hands, and continue after the hand.
+
 ### Blackjack
 
 Two cards are dealt privately to each player. Players take turns twisting
@@ -44,6 +49,9 @@ automatically, then the knocker scores the difference — unless the defender
 matches or beats it, which is an undercut worth the difference plus 25. Gin is
 worth the defender's whole hand plus 25, and the hand is abandoned as a draw if
 the stock runs down to two cards. First to 100 points wins the game.
+
+When a hand ends, set the device flat and tap **Show hands** to reveal both
+hands and the outcome together. Match points are added at the reveal.
 
 Hands are dealt face down so neither player can read the other's cards. The
 table is laid out for a device lying flat between the two players, with the
@@ -83,13 +91,17 @@ even money red/black, odd/even and high/low bets. Tap a spot to add the
 selected £1, £5 or £10 chip, press and hold a spot to take that stake back off,
 or use "Clear" to lift the lot. Nobody can stake more than the cash they hold.
 
+Each player places bets privately in their tilted seat. Once both are done,
+set the device flat and tap **Spin**; bets and the result are shown on the
+shared table.
+
 Keep the page in portrait like the other table games; the board is
 turned a quarter turn so it reads as a landscape betting layout facing whoever
 is betting. The wheel turns away behind the board the whole time, with the
 betting spots left slightly see-through so it shows through them. The board
 only accepts chips while the device is angled towards the player whose turn it is.
 
-Once both players have finished, the board fades away and the bets are listed
+Once both players have finished and **Spin** is pressed, the board fades away and the bets are listed
 underneath the wheel. The same wheel is used at the same size throughout and is
 never remounted, so the switch is only the board fading out and the blur over
 the wheel lifting — nothing slides or resizes. The wheel itself turns at a slow, constant

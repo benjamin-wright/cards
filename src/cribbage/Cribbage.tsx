@@ -31,6 +31,7 @@ type CribbageProps = {
 type CribbageState = {
   round: Round | null
   lastStarterId: string | null
+  showVisible?: boolean
 }
 
 function isCribbageState(value: unknown): value is CribbageState {
@@ -39,6 +40,7 @@ function isCribbageState(value: unknown): value is CribbageState {
     typeof value === 'object' &&
     value !== null &&
     (state.round === null || isRound(state.round)) &&
+    (state.showVisible === undefined || typeof state.showVisible === 'boolean') &&
     (state.lastStarterId === null || typeof state.lastStarterId === 'string')
   )
 }
@@ -249,7 +251,11 @@ export default function Cribbage({ players, tilt, onExit }: CribbageProps & { ti
     )
   }
 
-  const setRound = (next: Round) => setState(current => ({ ...current, round: next }))
+  const setRound = (next: Round) => setState(current => ({
+    ...current,
+    round: next,
+    showVisible: current.round?.phase !== 'show' && next.phase === 'show' ? false : current.showVisible,
+  }))
 
   const scoringPopup: ShowStep | null = round.phase === 'show' ? round.showStep : null
 
@@ -280,6 +286,7 @@ export default function Cribbage({ players, tilt, onExit }: CribbageProps & { ti
   }
 
   const handleAdvanceShow = () => {
+    if (tilt !== 'flat' || !state.showVisible) return
     const next = advanceShow(round)
     setRound(next)
   }
@@ -305,7 +312,7 @@ export default function Cribbage({ players, tilt, onExit }: CribbageProps & { ti
   const facing = tilt === 'left' ? left : tilt === 'right' ? right : null
 
   const isVisible = (hand: HandState) => {
-    if (round.phase === 'show' || round.phase === 'summary') return true
+    if (round.phase === 'show' || round.phase === 'summary') return false
     return facing?.playerId === hand.playerId
   }
 
@@ -378,6 +385,9 @@ export default function Cribbage({ players, tilt, onExit }: CribbageProps & { ti
             player2PrevScore={round.previousScores?.[right.playerId] ?? 0}
             targetScore={TARGET_SCORE}
           />
+          {tilt !== 'flat' && (
+            <div className="cribbage-board-mask">Set the phone flat to see the public board</div>
+          )}
         </div>
 
         {/* Private seats enter from either side. */}
@@ -386,7 +396,7 @@ export default function Cribbage({ players, tilt, onExit }: CribbageProps & { ti
             <div className="piles">
               <div className="pile">
                 <span className="pile-label">Starter</span>
-                {round.starter === null ? (
+                {round.starter === null || tilt !== 'flat' ? (
                   <CardFace faceDown />
                 ) : (
                   <CardFace card={round.starter} />
@@ -395,7 +405,7 @@ export default function Cribbage({ players, tilt, onExit }: CribbageProps & { ti
 
               <div className="pile">
                 <span className="pile-label">Crib</span>
-                {round.phase === 'show' || round.phase === 'summary' ? (
+                {(round.phase === 'show' || round.phase === 'summary') && tilt === 'flat' && state.showVisible ? (
                   <span className="hand">
                     {round.crib.map((card, idx) => (
                       <CardFace key={`${cardKey(card)}-${idx}`} card={card} />
@@ -414,6 +424,12 @@ export default function Cribbage({ players, tilt, onExit }: CribbageProps & { ti
             </div>
 
             <div className="cribbage-controls">
+              {round.phase === 'show' && !state.showVisible && (
+                <button type="button" className="btn-primary" disabled={tilt !== 'flat'}
+                  onClick={() => setState(current => ({ ...current, showVisible: true }))}>
+                  Show hands
+                </button>
+              )}
               <button type="button" className="btn-ghost" onClick={onExit}>
                 Exit
               </button>
@@ -421,13 +437,22 @@ export default function Cribbage({ players, tilt, onExit }: CribbageProps & { ti
           </div>
 
           <div className="cribbage-seats">
-            <RotatedSeat degrees={90} revealed={tilt === 'left'}>{panelFor(left)}</RotatedSeat>
-            <RotatedSeat degrees={-90} revealed={tilt === 'right'}>{panelFor(right)}</RotatedSeat>
+            <RotatedSeat degrees={90} revealed={round.phase !== 'show' && round.phase !== 'summary' && tilt === 'left'}>{panelFor(left)}</RotatedSeat>
+            <RotatedSeat degrees={-90} revealed={round.phase !== 'show' && round.phase !== 'summary' && tilt === 'right'}>{panelFor(right)}</RotatedSeat>
           </div>
         </div>
       </div>
 
-      {scorePopupContent !== null && round.starter !== null && (
+      {round.phase === 'summary' && tilt === 'flat' && (
+        <div className="cribbage-public-result">
+          <h2>{round.winnerId === null ? 'Hand complete' : `${round.hands.find(hand => hand.playerId === round.winnerId)?.name} wins!`}</h2>
+          <p>{round.hands.map(hand => `${hand.name}: ${round.scores[hand.playerId] ?? 0}`).join(' · ')}</p>
+          <button type="button" className="btn-primary" onClick={round.winnerId === null ? handleDealNextHand : handleNewGame}>
+            {round.winnerId === null ? 'Next hand' : 'New game'}
+          </button>
+        </div>
+      )}
+      {scorePopupContent !== null && round.starter !== null && tilt === 'flat' && state.showVisible && (
         <ScorePopup
           title={scorePopupContent.title}
           starter={round.starter}
