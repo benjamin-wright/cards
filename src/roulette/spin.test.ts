@@ -4,6 +4,8 @@ import {
   BALL_SPEED,
   CENTRE,
   LANDING_MS,
+  MAX_BALL_SPEED,
+  MIN_BALL_SPEED,
   POCKET_RADIUS,
   SPIN_MS,
   TRACK_MS,
@@ -14,6 +16,7 @@ import {
   ballSpeed,
   ballTravel,
   polar,
+  randomBallSpeed,
   wheelAngle,
 } from './spin'
 import { WHEEL, pocketAngle } from './wheel'
@@ -38,6 +41,13 @@ describe('wheel motion', () => {
 })
 
 describe('ball motion', () => {
+  it('varies the throw speed across a wide range', () => {
+    expect(randomBallSpeed(() => 0)).toBe(MIN_BALL_SPEED)
+    expect(randomBallSpeed(() => 0.5)).toBe(BALL_SPEED)
+    expect(randomBallSpeed(() => 1)).toBe(MAX_BALL_SPEED)
+    expect(Math.abs(ballTravel(TRACK_S, MIN_BALL_SPEED) - ballTravel(TRACK_S, MAX_BALL_SPEED))).toBeGreaterThan(360)
+  })
+
   it('is thrown against the wheel and decelerates onto its speed', () => {
     expect(ballSpeed(0)).toBe(BALL_SPEED)
     expect(Math.sign(BALL_SPEED)).toBe(-Math.sign(WHEEL_SPEED))
@@ -92,20 +102,26 @@ describe('ball motion', () => {
   it('lands in the winning pocket, wherever the wheel started', () => {
     for (const pocket of [0, 17, 26, WHEEL[10]]) {
       for (const from of [0, 137.5, -40]) {
-        const landed = ballAt(LANDING_MS, pocket, from)
-        const seat = polar(POCKET_RADIUS, wheelAngle(LANDING_MS, from) + pocketAngle(pocket))
-        expect(distance(landed, seat)).toBeLessThan(1e-6)
+        for (const speed of [MIN_BALL_SPEED, BALL_SPEED, MAX_BALL_SPEED]) {
+          const landed = ballAt(LANDING_MS, pocket, from, speed)
+          const seat = polar(POCKET_RADIUS, wheelAngle(LANDING_MS, from) + pocketAngle(pocket))
+          expect(distance(landed, seat)).toBeLessThan(1e-6)
+          expect(distance(ballAt(LANDING_MS - 1, pocket, from, speed), landed)).toBeLessThan(1)
+          expect(ballSpeed(TRACK_S, speed)).toBeCloseTo(WHEEL_SPEED)
+        }
       }
     }
   })
 
   it('runs unbroken from the throw to the pocket', () => {
-    let previous = ballAt(0, 26)
-    for (let elapsed = 20; elapsed <= LANDING_MS; elapsed += 20) {
-      const current = ballAt(elapsed, 26)
-      // No jumps: a 20ms step can't cross more than a slice of the wheel.
-      expect(distance(previous, current)).toBeLessThan(30)
-      previous = current
+    for (const speed of [MIN_BALL_SPEED, BALL_SPEED, MAX_BALL_SPEED]) {
+      let previous = ballAt(0, 26, 0, speed)
+      for (let elapsed = 20; elapsed <= LANDING_MS; elapsed += 20) {
+        const current = ballAt(elapsed, 26, 0, speed)
+        // No jumps: a 20ms step can't cross more than a slice of the wheel.
+        expect(distance(previous, current)).toBeLessThan(30)
+        previous = current
+      }
     }
   })
 

@@ -14,6 +14,7 @@ import {
   startSpin,
 } from './round'
 import { WHEEL } from './wheel'
+import { BALL_SPEED, MAX_BALL_SPEED, MIN_BALL_SPEED } from './spin'
 
 const players: Player[] = [
   { id: 'a', name: 'Ann', cash: 100 },
@@ -81,10 +82,26 @@ describe('roulette round', () => {
     const round = startSpin(roundWithBet, landOn(7))
     expect(round.phase).toBe('spinning')
     expect(round.pocket).toBe(7)
+    expect(round.ballStartSpeed).toBeGreaterThanOrEqual(MIN_BALL_SPEED)
+    expect(round.ballStartSpeed).toBeLessThanOrEqual(MAX_BALL_SPEED)
     expect(startSpin(round)).toBe(round)
     expect(placeChip(round, 'a', 'red', 1)).toBe(round)
     expect(clearBet(round, 'b', 'straight-7')).toBe(round)
     expect(clearBets(round, 'b')).toBe(round)
+  })
+
+  it('chooses throw speed independently of the pocket and keeps it through settlement', () => {
+    const withStake = placeChip(createRound(players), 'a', 'red', 1)
+    const pocketIndex = WHEEL.indexOf(7) / WHEEL.length
+    const lowValues = [pocketIndex, 0][Symbol.iterator]()
+    const low = startSpin(withStake, () => lowValues.next().value!)
+    const highValues = [pocketIndex, 1][Symbol.iterator]()
+    const high = startSpin(withStake, () => highValues.next().value!)
+    expect(low.pocket).toBe(7)
+    expect(high.pocket).toBe(7)
+    expect(low.ballStartSpeed).toBe(MIN_BALL_SPEED)
+    expect(high.ballStartSpeed).toBe(MAX_BALL_SPEED)
+    expect(finishSpin(high).ballStartSpeed).toBe(MAX_BALL_SPEED)
   })
 
   it('allows the remaining player to spin when the other has no cash', () => {
@@ -149,7 +166,11 @@ describe('roulette round', () => {
     expect(isRound(null)).toBe(false)
     expect(isRound({ ...createRound(players), phase: 'wat' })).toBe(false)
     expect(isRound({ ...createRound(players), pocket: 42 })).toBe(false)
+    expect(isRound({ ...createRound(players), ballStartSpeed: Number.NaN })).toBe(false)
+    expect(isRound({ ...createRound(players), ballStartSpeed: MIN_BALL_SPEED - 1 })).toBe(false)
+    expect(isRound({ ...createRound(players), ballStartSpeed: BALL_SPEED })).toBe(true)
     expect(isRound({ ...createRound(players), phase: 'ready' })).toBe(true)
+    expect(isRound({ ...createRound(players), phase: 'spinning', pocket: 7 })).toBe(true)
     const savedReady = { ...placeChip(createRound(players), 'a', 'red', 1), phase: 'ready' as const }
     expect(placeChip(savedReady, 'b', 'black', 1).seats[1].bets).toEqual({ black: 1 })
     expect(startSpin(savedReady, landOn(7)).phase).toBe('spinning')

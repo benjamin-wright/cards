@@ -107,16 +107,17 @@ Once **SPIN** is pressed, the board fades away and the bets are listed
 underneath the wheel. The same wheel is used at the same size throughout and is
 never remounted, so the switch is only the board fading out and the blur over
 the wheel lifting — nothing slides or resizes. The wheel itself turns at a slow, constant
-crawl and is never stopped; the ball is thrown in the other direction along an
+crawl and is never stopped; the ball is thrown at a different random starting
+speed each spin in the other direction along an
 entry tangent, runs a couple of circuits of the outer groove under a constant
 deceleration, then falls into the pockets on a parabola as it comes down to the
 wheel's own speed — after which it rides round in its pocket. A pop-up then
 shows every bet, what it won or lost, and each player's new total.
 
-The winning pocket is chosen as the wheel starts turning and the whole flight
+The winning pocket is chosen independently of the throw speed as the wheel starts turning and the whole flight
 is worked backwards from where that pocket will be when the ball stops, so the
 ball is never nudged mid-flight and refreshing part way through settles on the
-same number.
+same number and throw speed.
 
 If a spin leaves both players short of the £1 minimum, that summary is still
 shown with the final balances — it just drops the "Next spin" button, since
