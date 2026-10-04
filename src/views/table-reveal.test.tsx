@@ -8,7 +8,7 @@ import { createRound as createEightsRound } from '../crazyeights/round'
 import Cribbage from '../cribbage/Cribbage'
 import { createRound as createCribbageRound } from '../cribbage/round'
 import Roulette from '../roulette/Roulette'
-import { createRound as createRouletteRound, endTurn } from '../roulette/round'
+import { createRound as createRouletteRound, placeChip } from '../roulette/round'
 
 const players: Player[] = [
   { id: 'a', name: 'Ada', cash: 100 },
@@ -53,16 +53,24 @@ describe('shared table outcomes', () => {
     expect(renderToStaticMarkup(<CrazyEights players={players} tilt="right" onExit={noop} />)).not.toContain('table-reveal-hand')
   })
 
-  it('waits for the flat shared spin after both roulette betting turns', () => {
-    let round = createRouletteRound(players)
-    round = endTurn(round, 'a')
-    round = endTurn(round, 'b')
+  it('offers a wheel-centered spin only when flat with a stake and no turn controls', () => {
+    const round = createRouletteRound(players)
     restore('roulette', { round })
+    const empty = renderToStaticMarkup(<Roulette players={players} tilt="flat" onExit={noop} onSettle={noop} />)
+    expect(empty).toMatch(/roulette-wheel-spin" disabled=""[^>]*>SPIN<\/button>/)
+
+    restore('roulette', { round: placeChip(round, 'b', 'red', 5) })
     const flat = renderToStaticMarkup(<Roulette players={players} tilt="flat" onExit={noop} onSettle={noop} />)
-    expect(flat).toContain('>Spin</button>')
+    const left = renderToStaticMarkup(<Roulette players={players} tilt="left" onExit={noop} onSettle={noop} />)
+    const right = renderToStaticMarkup(<Roulette players={players} tilt="right" onExit={noop} onSettle={noop} />)
+    expect(flat).toMatch(/roulette-wheel-spin"[^>]*>SPIN<\/button>/)
     expect(flat).not.toContain('roulette-bet-summary-seat')
-    expect(renderToStaticMarkup(<Roulette players={players} tilt="left" onExit={noop} onSettle={noop} />))
-      .toContain('roulette-flat-cover')
+    expect(flat).not.toContain('bet-chip--seat-2')
+    expect(left).not.toContain('roulette-wheel-spin')
+    expect(left).not.toContain('bet-chip--seat-2')
+    expect(right).toContain('bet-chip--seat-2')
+    expect(left).not.toContain('>Done</button>')
+    expect(right).not.toContain('>Done</button>')
   })
 
   it('requires a flat device and explicit reveal for cribbage scoring', () => {

@@ -85,23 +85,24 @@ with hands face down until the device is tipped towards a player.
 ### Roulette
 
 Single-zero roulette for the same two players, staked from the shared cash
-pile. Players take it in turns to place their chips on one shared board —
+pile. Either player can tip the device towards themselves to place chips at
+any time on their own private board —
 straight up numbers (35 to 1), the three column and dozen bets (2 to 1) and the
 even money red/black, odd/even and high/low bets. Tap a spot to add the
 selected £1, £5 or £10 chip, press and hold a spot to take that stake back off,
 or use "Clear" to lift the lot. Nobody can stake more than the cash they hold.
 
-Each player places bets privately in their tilted seat. Once both are done,
-set the device flat and tap **Spin**; bets and the result are shown on the
-shared table.
+When both players are ready, set the device flat and tap **SPIN** in the
+middle of the wheel. At least one bet is needed; either player may sit out.
+Bets and the result are then shown on the shared table.
 
 Keep the page in portrait like the other table games; the board is
-turned a quarter turn so it reads as a landscape betting layout facing whoever
-is betting. The wheel turns away behind the board the whole time, with the
+turned a quarter turn so it reads as a landscape betting layout facing the
+player placing chips. The wheel turns away behind the board the whole time, with the
 betting spots left slightly see-through so it shows through them. The board
-only accepts chips while the device is angled towards the player whose turn it is.
+only accepts chips while the device is angled towards that player.
 
-Once both players have finished and **Spin** is pressed, the board fades away and the bets are listed
+Once **SPIN** is pressed, the board fades away and the bets are listed
 underneath the wheel. The same wheel is used at the same size throughout and is
 never remounted, so the switch is only the board fading out and the blur over
 the wheel lifting — nothing slides or resizes. The wheel itself turns at a slow, constant
@@ -116,7 +117,7 @@ is worked backwards from where that pocket will be when the ball stops, so the
 ball is never nudged mid-flight and refreshing part way through settles on the
 same number.
 
-If a spin leaves either player short of the £1 minimum, that summary is still
+If a spin leaves both players short of the £1 minimum, that summary is still
 shown with the final balances — it just drops the "Next spin" button, since
 there's nothing left to bet with.
 

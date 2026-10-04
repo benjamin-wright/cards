@@ -2,9 +2,10 @@ import type { Player } from '../players'
 import { betSpot, isBetId } from './bets'
 import { isPocket, spinWheel, type Rng } from './wheel'
 
-export type Phase = 'betting' | 'spinning' | 'summary'
+/** Ready is accepted for spins saved by the previous turn-based version. */
+export type Phase = 'betting' | 'ready' | 'spinning' | 'summary'
 
-const PHASES: Phase[] = ['betting', 'spinning', 'summary']
+const PHASES: Phase[] = ['betting', 'ready', 'spinning', 'summary']
 
 export type Seat = {
   playerId: string
@@ -114,7 +115,7 @@ function updateSeat(round: Round, playerId: string, update: (seat: Seat) => Seat
 export function canPlaceChip(round: Round, playerId: string, betId: string, chip: number): boolean {
   const seat = seatOf(round, playerId)
   return (
-    round.phase === 'betting' && seat !== null && isBetId(betId) &&
+    (round.phase === 'betting' || round.phase === 'ready') && seat !== null && isBetId(betId) &&
     Number.isFinite(chip) && chip > 0 && remaining(seat) >= chip
   )
 }
@@ -132,7 +133,7 @@ export function placeChip(round: Round, playerId: string, betId: string, chip: n
 /** Takes a whole stake back off the board. */
 export function clearBet(round: Round, playerId: string, betId: string): Round {
   const seat = seatOf(round, playerId)
-  if (round.phase !== 'betting' || seat === null || seat.bets[betId] === undefined) return round
+  if ((round.phase !== 'betting' && round.phase !== 'ready') || seat === null || seat.bets[betId] === undefined) return round
 
   return updateSeat(round, playerId, current => {
     const bets = { ...current.bets }
@@ -143,13 +144,13 @@ export function clearBet(round: Round, playerId: string, betId: string): Round {
 
 export function clearBets(round: Round, playerId: string): Round {
   const seat = seatOf(round, playerId)
-  if (round.phase !== 'betting' || seat === null) return round
+  if ((round.phase !== 'betting' && round.phase !== 'ready') || seat === null) return round
   return updateSeat(round, playerId, current => ({ ...current, bets: {} }))
 }
 
 /** Starts the public spin, fixing its pocket so refreshes cannot re-roll it. */
 export function startSpin(round: Round, rng: Rng = Math.random): Round {
-  if (round.phase !== 'betting' || !round.seats.some(seat => staked(seat) > 0)) return round
+  if ((round.phase !== 'betting' && round.phase !== 'ready') || !round.seats.some(seat => staked(seat) > 0)) return round
   return { ...round, phase: 'spinning', pocket: spinWheel(rng) }
 }
 

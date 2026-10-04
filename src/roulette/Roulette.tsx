@@ -115,7 +115,7 @@ export default function Roulette({ players, tilt, onSettle, onExit }: RoulettePr
   // Keep the final summary visible if nobody can bet on the next spin.
   const canPlayAgain = players.some(player => player.cash >= MIN_STAKE)
 
-  if (round.phase === 'betting' && !canPlayAgain) {
+  if ((round.phase === 'betting' || round.phase === 'ready') && !canPlayAgain) {
     return (
       <main className="view-roulette">
         <GameBar onExit={onExit} />
@@ -142,13 +142,13 @@ export default function Roulette({ players, tilt, onSettle, onExit }: RoulettePr
 
   const stakes: Record<string, BoardStake[]> = {}
   round.seats.forEach((seat, index) => {
-    if (round.phase === 'betting' && index !== (tilt === 'left' ? 0 : tilt === 'right' ? 1 : -1)) return
+    if ((round.phase === 'betting' || round.phase === 'ready') && index !== (tilt === 'left' ? 0 : tilt === 'right' ? 1 : -1)) return
     for (const [betId, amount] of Object.entries(seat.bets)) {
       stakes[betId] = [...(stakes[betId] ?? []), { seat: index, amount }]
     }
   })
 
-  const betting = round.phase === 'betting'
+  const betting = round.phase === 'betting' || round.phase === 'ready'
   const facing = tilt === 'left' ? 0 : tilt === 'right' ? 1 : null
   const seat = round.seats[facing ?? 0]
   const active = betting && facing !== null
@@ -241,7 +241,7 @@ export default function Roulette({ players, tilt, onSettle, onExit }: RoulettePr
           )}
         </div>
 
-        <BetSummary seats={round.seats} />
+        {!betting && <BetSummary seats={round.seats} />}
       </div>
 
       {round.phase === 'summary' && results !== null && round.pocket !== null && (
@@ -252,7 +252,7 @@ export default function Roulette({ players, tilt, onSettle, onExit }: RoulettePr
           onExit={onExit}
         />
       )}
-      {round.phase !== 'betting' && tilt !== 'flat' && (
+      {!betting && tilt !== 'flat' && (
         <div className="roulette-flat-cover">Set the phone flat to see the spin and results</div>
       )}
     </main>
