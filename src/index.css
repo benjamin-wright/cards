@@ -1450,6 +1450,21 @@ button.hand-card:not(:disabled):hover {
 
 .view-roulette--flat .roulette-stage {
   opacity: 1;
+  z-index: 2;
+}
+
+.roulette-wheel-spin {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: auto;
+  border-radius: 50%;
+  width: 72px;
+  height: 72px;
+  padding: 0;
+  font-weight: 700;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.6);
 }
 
 .roulette-flat-cover {

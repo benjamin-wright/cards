@@ -2,9 +2,9 @@ import type { Player } from '../players'
 import { betSpot, isBetId } from './bets'
 import { isPocket, spinWheel, type Rng } from './wheel'
 
-export type Phase = 'betting' | 'ready' | 'spinning' | 'summary'
+export type Phase = 'betting' | 'spinning' | 'summary'
 
-const PHASES: Phase[] = ['betting', 'ready', 'spinning', 'summary']
+const PHASES: Phase[] = ['betting', 'spinning', 'summary']
 
 export type Seat = {
   playerId: string
@@ -13,8 +13,6 @@ export type Seat = {
   cash: number
   /** Stake on each bet spot, keyed by spot id. */
   bets: Record<string, number>
-  /** True once this player has finished placing bets for the spin. */
-  done: boolean
 }
 
 export type BetResult = {
@@ -36,15 +34,10 @@ export type Result = {
 }
 
 /**
- * Players take it in turns to place their chips on the shared board, then the
- * wheel is spun once for both of them.
+ * Either player may place bets until the wheel is spun for both of them.
  */
 export type Round = {
   seats: Seat[]
-  /** Index of the seat placing bets. */
-  turn: number
-  /** Index of the seat that opened the betting, so turns alternate. */
-  opener: number
   phase: Phase
   /** The winning pocket, chosen as the wheel starts turning. */
   pocket: number | null
@@ -68,7 +61,6 @@ function isSeat(value: unknown): value is Seat {
     typeof seat.playerId === 'string' &&
     typeof seat.name === 'string' &&
     typeof seat.cash === 'number' &&
-    typeof seat.done === 'boolean' &&
     isBets(seat.bets)
   )
 }
@@ -82,31 +74,20 @@ export function isRound(value: unknown): value is Round {
     Array.isArray(round.seats) &&
     round.seats.length > 0 &&
     round.seats.every(isSeat) &&
-    typeof round.turn === 'number' &&
-    round.turn >= 0 &&
-    round.turn < round.seats.length &&
-    typeof round.opener === 'number' &&
-    round.opener >= 0 &&
-    round.opener < round.seats.length &&
     PHASES.includes(round.phase!) &&
     (round.pocket === null || isPocket(round.pocket)) &&
     (round.results === null || Array.isArray(round.results))
   )
 }
 
-export function createRound(players: Player[], firstToBet = 0): Round {
-  const opener = players.length === 0 ? 0 : firstToBet % players.length
-
+export function createRound(players: Player[]): Round {
   return {
     seats: players.map(player => ({
       playerId: player.id,
       name: player.name,
       cash: player.cash,
       bets: {},
-      done: false,
     })),
-    turn: opener,
-    opener,
     phase: 'betting',
     pocket: null,
     results: null,
@@ -126,19 +107,15 @@ export function seatOf(round: Round, playerId: string): Seat | null {
   return round.seats.find(seat => seat.playerId === playerId) ?? null
 }
 
-/** The seat whose turn it is to place chips, or null once betting is closed. */
-export function activeSeat(round: Round): Seat | null {
-  return round.phase === 'betting' ? round.seats[round.turn] ?? null : null
-}
-
 function updateSeat(round: Round, playerId: string, update: (seat: Seat) => Seat): Round {
   return { ...round, seats: round.seats.map(seat => (seat.playerId === playerId ? update(seat) : seat)) }
 }
 
 export function canPlaceChip(round: Round, playerId: string, betId: string, chip: number): boolean {
-  const seat = activeSeat(round)
+  const seat = seatOf(round, playerId)
   return (
-    seat !== null && seat.playerId === playerId && !seat.done && isBetId(betId) && chip > 0 && remaining(seat) >= chip
+    round.phase === 'betting' && seat !== null && isBetId(betId) &&
+    Number.isFinite(chip) && chip > 0 && remaining(seat) >= chip
   )
 }
 
@@ -154,8 +131,8 @@ export function placeChip(round: Round, playerId: string, betId: string, chip: n
 
 /** Takes a whole stake back off the board. */
 export function clearBet(round: Round, playerId: string, betId: string): Round {
-  const seat = activeSeat(round)
-  if (seat === null || seat.playerId !== playerId || seat.bets[betId] === undefined) return round
+  const seat = seatOf(round, playerId)
+  if (round.phase !== 'betting' || seat === null || seat.bets[betId] === undefined) return round
 
   return updateSeat(round, playerId, current => {
     const bets = { ...current.bets }
@@ -165,32 +142,14 @@ export function clearBet(round: Round, playerId: string, betId: string): Round {
 }
 
 export function clearBets(round: Round, playerId: string): Round {
-  const seat = activeSeat(round)
-  if (seat === null || seat.playerId !== playerId) return round
+  const seat = seatOf(round, playerId)
+  if (round.phase !== 'betting' || seat === null) return round
   return updateSeat(round, playerId, current => ({ ...current, bets: {} }))
-}
-
-/**
- * Ends a player's betting turn. Everyone must return the device flat before
- * the shared spin begins.
- */
-export function endTurn(round: Round, playerId: string): Round {
-  const seat = activeSeat(round)
-  if (seat === null || seat.playerId !== playerId) return round
-
-  const seats = round.seats.map(entry => (entry.playerId === playerId ? { ...entry, done: true } : entry))
-  const next = seats.findIndex(entry => !entry.done)
-
-  if (next < 0) {
-    return { ...round, seats, phase: 'ready' }
-  }
-
-  return { ...round, seats, turn: next }
 }
 
 /** Starts the public spin, fixing its pocket so refreshes cannot re-roll it. */
 export function startSpin(round: Round, rng: Rng = Math.random): Round {
-  if (round.phase !== 'ready') return round
+  if (round.phase !== 'betting' || !round.seats.some(seat => staked(seat) > 0)) return round
   return { ...round, phase: 'spinning', pocket: spinWheel(rng) }
 }
 
@@ -222,8 +181,7 @@ export function finishSpin(round: Round): Round {
   return { ...round, phase: 'summary', results }
 }
 
-/** Deals the next spin, with the other player opening the betting. */
-export function nextRound(round: Round, players: Player[]): Round {
-  const opener = round.seats.length === 0 ? 0 : (round.opener + 1) % round.seats.length
-  return createRound(players, opener)
+/** Deals the next spin for both players. */
+export function nextRound(players: Player[]): Round {
+  return createRound(players)
 }
