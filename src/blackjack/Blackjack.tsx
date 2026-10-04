@@ -184,7 +184,7 @@ export default function Blackjack({ players, tilt, onExit }: {
                 <p>
                   {round.seats.map(seat =>
                     round.result?.winnerId === seat.playerId
-                      ? `${seat.name}: ${(scores[seat.playerId] ?? 0) - 1} + 1 ?? 0}`
+                      ? `${seat.name}: ${(scores[seat.playerId] ?? 0) - 1} + 1`
                       : `${seat.name}: ${scores[seat.playerId] ?? 0}`
                   ).join(' · ')}
                 </p>
