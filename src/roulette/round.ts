@@ -2,9 +2,9 @@ import type { Player } from '../players'
 import { betSpot, isBetId } from './bets'
 import { isPocket, spinWheel, type Rng } from './wheel'
 
-export type Phase = 'betting' | 'spinning' | 'summary'
+export type Phase = 'betting' | 'ready' | 'spinning' | 'summary'
 
-const PHASES: Phase[] = ['betting', 'spinning', 'summary']
+const PHASES: Phase[] = ['betting', 'ready', 'spinning', 'summary']
 
 export type Seat = {
   playerId: string
@@ -171,11 +171,10 @@ export function clearBets(round: Round, playerId: string): Round {
 }
 
 /**
- * Ends a player's betting turn. The wheel starts turning once everyone has
- * had their go, with the winning pocket chosen up front so a refresh part way
- * through the spin still settles on the same number.
+ * Ends a player's betting turn. Everyone must return the device flat before
+ * the shared spin begins.
  */
-export function endTurn(round: Round, playerId: string, rng: Rng = Math.random): Round {
+export function endTurn(round: Round, playerId: string): Round {
   const seat = activeSeat(round)
   if (seat === null || seat.playerId !== playerId) return round
 
@@ -183,10 +182,16 @@ export function endTurn(round: Round, playerId: string, rng: Rng = Math.random):
   const next = seats.findIndex(entry => !entry.done)
 
   if (next < 0) {
-    return { ...round, seats, phase: 'spinning', pocket: spinWheel(rng) }
+    return { ...round, seats, phase: 'ready' }
   }
 
   return { ...round, seats, turn: next }
+}
+
+/** Starts the public spin, fixing its pocket so refreshes cannot re-roll it. */
+export function startSpin(round: Round, rng: Rng = Math.random): Round {
+  if (round.phase !== 'ready') return round
+  return { ...round, phase: 'spinning', pocket: spinWheel(rng) }
 }
 
 /** Settles every seat against the pocket the ball landed in. */

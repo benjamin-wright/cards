@@ -19,6 +19,7 @@ import {
   placeChip,
   remaining,
   staked,
+  startSpin,
   clearBet,
   type Result,
   type Round,
@@ -143,6 +144,7 @@ export default function Roulette({ players, tilt, onSettle, onExit }: RoulettePr
 
   const stakes: Record<string, BoardStake[]> = {}
   round.seats.forEach((seat, index) => {
+    if (round.phase === 'betting' && index !== round.turn) return
     for (const [betId, amount] of Object.entries(seat.bets)) {
       stakes[betId] = [...(stakes[betId] ?? []), { seat: index, amount }]
     }
@@ -159,9 +161,6 @@ export default function Roulette({ players, tilt, onSettle, onExit }: RoulettePr
   const facing = tilt === 'left' ? 0 : tilt === 'right' ? 1 : null
   const active = betting && facing === turn
   const free = remaining(seat)
-  /** The last player still to bet sets the wheel going. */
-  const lastToBet = round.seats.every((entry, index) => index === turn || entry.done)
-
   // The wheel stays mounted behind every phase while the board and spin panel
   // cross-fade; it shifts aside only while a player's betting seat is open.
   return (
@@ -208,7 +207,7 @@ export default function Roulette({ players, tilt, onSettle, onExit }: RoulettePr
                   disabled={!active}
                   onClick={() => setRound(endTurn(round, seat.playerId))}
                 >
-                  {lastToBet ? 'Spin' : 'Done'}
+                  Done
                 </button>
               </header>
 
@@ -246,14 +245,18 @@ export default function Roulette({ players, tilt, onSettle, onExit }: RoulettePr
         <GameBar onExit={onExit} />
 
         <div className="roulette-wheel-result">
-          {round.phase === 'spinning' || round.pocket === null ? (
+          {round.phase === 'ready' ? (
+            <button type="button" className="btn-primary" disabled={tilt !== 'flat'} onClick={() => setRound(startSpin(round))}>
+              Spin
+            </button>
+          ) : round.phase === 'spinning' || round.pocket === null ? (
             <span className="hint">Spinning…</span>
           ) : (
             <span className={`roulette-result colour-${colourOf(round.pocket)}`}>{round.pocket}</span>
           )}
         </div>
 
-        <BetSummary seats={round.seats} />
+        {round.phase !== 'ready' && <BetSummary seats={round.seats} />}
       </div>
 
       {round.phase === 'summary' && results !== null && round.pocket !== null && (
@@ -263,6 +266,9 @@ export default function Roulette({ players, tilt, onSettle, onExit }: RoulettePr
           onNext={canPlayAgain ? () => setRound(nextRound(round, players)) : null}
           onExit={onExit}
         />
+      )}
+      {round.phase !== 'betting' && tilt !== 'flat' && (
+        <div className="roulette-flat-cover">Set the phone flat to see the spin and results</div>
       )}
     </main>
   )

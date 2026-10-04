@@ -13,6 +13,7 @@ import {
   remaining,
   seatOf,
   staked,
+  startSpin,
   type Round,
 } from './round'
 import { WHEEL } from './wheel'
@@ -28,7 +29,8 @@ function landOn(pocket: number) {
 }
 
 function bothDone(round: Round, pocket: number): Round {
-  return endTurn(endTurn(round, round.seats[round.turn].playerId, landOn(pocket)), round.seats[(round.turn + 1) % 2].playerId, landOn(pocket))
+  const ready = endTurn(endTurn(round, round.seats[round.turn].playerId), round.seats[(round.turn + 1) % 2].playerId)
+  return startSpin(ready, landOn(pocket))
 }
 
 describe('roulette round', () => {
@@ -71,18 +73,23 @@ describe('roulette round', () => {
     expect(staked(seatOf(round, 'a')!)).toBe(0)
   })
 
-  it('passes the turn on, then spins once both have bet', () => {
+  it('passes the turn on, then waits for a public spin once both have bet', () => {
     let round = placeChip(createRound(players), 'a', 'red', 10)
     round = endTurn(round, 'a')
     expect(round.phase).toBe('betting')
     expect(activeSeat(round)?.playerId).toBe('b')
 
     round = placeChip(round, 'b', 'straight-7', 5)
-    round = endTurn(round, 'b', landOn(7))
-    expect(round.phase).toBe('spinning')
-    expect(round.pocket).toBe(7)
+    round = endTurn(round, 'b')
+    expect(round.phase).toBe('ready')
+    expect(round.pocket).toBeNull()
     expect(activeSeat(round)).toBeNull()
     expect(isRound(round)).toBe(true)
+    expect(startSpin(createRound(players))).toEqual(createRound(players))
+    round = startSpin(round, landOn(7))
+    expect(round.phase).toBe('spinning')
+    expect(round.pocket).toBe(7)
+    expect(startSpin(round)).toBe(round)
   })
 
   it('ignores an end of turn from the waiting player', () => {
@@ -96,7 +103,7 @@ describe('roulette round', () => {
     round = placeChip(round, 'a', 'black', 10)
     round = endTurn(round, 'a')
     round = placeChip(round, 'b', 'red', 5)
-    round = endTurn(round, 'b', landOn(7))
+    round = startSpin(endTurn(round, 'b'), landOn(7))
     round = finishSpin(round)
 
     expect(round.phase).toBe('summary')
