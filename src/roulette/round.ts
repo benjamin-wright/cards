@@ -1,5 +1,6 @@
 import type { Player } from '../players'
 import { betSpot, isBetId } from './bets'
+import { MAX_BALL_SPEED, MIN_BALL_SPEED, randomBallSpeed } from './spin'
 import { isPocket, spinWheel, type Rng } from './wheel'
 
 /** Ready is accepted for spins saved by the previous turn-based version. */
@@ -42,6 +43,8 @@ export type Round = {
   phase: Phase
   /** The winning pocket, chosen as the wheel starts turning. */
   pocket: number | null
+  /** Optional so saved spins from before variable throws keep their original motion. */
+  ballStartSpeed?: number
   results: Result[] | null
 }
 
@@ -77,6 +80,11 @@ export function isRound(value: unknown): value is Round {
     round.seats.every(isSeat) &&
     PHASES.includes(round.phase!) &&
     (round.pocket === null || isPocket(round.pocket)) &&
+    (round.ballStartSpeed === undefined ||
+      (typeof round.ballStartSpeed === 'number' &&
+        Number.isFinite(round.ballStartSpeed) &&
+        round.ballStartSpeed >= MIN_BALL_SPEED &&
+        round.ballStartSpeed <= MAX_BALL_SPEED)) &&
     (round.results === null || Array.isArray(round.results))
   )
 }
@@ -151,7 +159,7 @@ export function clearBets(round: Round, playerId: string): Round {
 /** Starts the public spin, fixing its pocket so refreshes cannot re-roll it. */
 export function startSpin(round: Round, rng: Rng = Math.random): Round {
   if ((round.phase !== 'betting' && round.phase !== 'ready') || !round.seats.some(seat => staked(seat) > 0)) return round
-  return { ...round, phase: 'spinning', pocket: spinWheel(rng) }
+  return { ...round, phase: 'spinning', pocket: spinWheel(rng), ballStartSpeed: randomBallSpeed(rng) }
 }
 
 /** Settles every seat against the pocket the ball landed in. */

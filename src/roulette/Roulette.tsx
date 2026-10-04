@@ -158,7 +158,7 @@ export default function Roulette({ players, tilt, onSettle, onExit }: RoulettePr
   return (
     <main className={`view-roulette view-roulette--table${betting ? (active ? ` view-roulette--${tilt}` : ' view-roulette--flat') : ' view-roulette--spinning'}`}>
       <div className="roulette-stage">
-        <Wheel pocket={round.pocket} spinning={round.phase === 'spinning'} />
+        <Wheel pocket={round.pocket} spinning={round.phase === 'spinning'} startSpeed={round.ballStartSpeed} />
         {betting && tilt === 'flat' && (
           <button
             type="button"

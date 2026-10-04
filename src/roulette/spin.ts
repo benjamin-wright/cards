@@ -21,6 +21,8 @@ export const POCKET_STEP = 360 / POCKETS
 export const WHEEL_SPEED = 24
 /** The ball is thrown the other way, in degrees per second. */
 export const BALL_SPEED = -520
+export const MIN_BALL_SPEED = -650
+export const MAX_BALL_SPEED = -390
 /** Flight along the entry tangent, before the ball touches the track. */
 export const APPROACH_MS = 600
 /** Touchdown to matching the wheel's speed, decelerating at a constant rate. */
@@ -39,8 +41,15 @@ const TRACK_S = TRACK_MS / 1000
 const DROP_S = DROP_MS / 1000
 const APPROACH_S = APPROACH_MS / 1000
 
+/** Choose a new throw speed independently of the winning pocket. */
+export function randomBallSpeed(rng: () => number = Math.random): number {
+  return MIN_BALL_SPEED + rng() * (MAX_BALL_SPEED - MIN_BALL_SPEED)
+}
+
 /** Constant deceleration that carries the ball from its throw to wheel speed. */
-const DECELERATION = (WHEEL_SPEED - BALL_SPEED) / TRACK_S
+function deceleration(startSpeed: number): number {
+  return (WHEEL_SPEED - startSpeed) / TRACK_S
+}
 
 const RADIANS = Math.PI / 180
 
@@ -61,14 +70,14 @@ export function wheelAngle(elapsed: number, from = 0): number {
 }
 
 /** The ball's angular velocity `seconds` after touchdown. */
-export function ballSpeed(seconds: number): number {
-  return BALL_SPEED + DECELERATION * Math.min(seconds, TRACK_S)
+export function ballSpeed(seconds: number, startSpeed = BALL_SPEED): number {
+  return startSpeed + deceleration(startSpeed) * Math.min(seconds, TRACK_S)
 }
 
 /** Degrees the ball has swept round the track since touchdown. */
-export function ballTravel(seconds: number): number {
+export function ballTravel(seconds: number, startSpeed = BALL_SPEED): number {
   const time = Math.min(seconds, TRACK_S)
-  return BALL_SPEED * time + (DECELERATION * time * time) / 2
+  return startSpeed * time + (deceleration(startSpeed) * time * time) / 2
 }
 
 /**
@@ -89,14 +98,14 @@ export function ballRadius(seconds: number): number {
  * backwards from the pocket's position at the moment the ball stops, so the
  * flight itself never has to be corrected part way round.
  */
-export function contactAngle(pocket: number, from = 0): number {
-  return wheelAngle(LANDING_MS, from) + pocketAngle(pocket) - ballTravel(TRACK_S)
+export function contactAngle(pocket: number, from = 0, startSpeed = BALL_SPEED): number {
+  return wheelAngle(LANDING_MS, from) + pocketAngle(pocket) - ballTravel(TRACK_S, startSpeed)
 }
 
 /** Unit vector along the ball's direction of travel at `degrees` on the track. */
-function heading(degrees: number): Point {
+function heading(degrees: number, startSpeed: number): Point {
   const angle = (degrees - 90) * RADIANS
-  const direction = Math.sign(BALL_SPEED)
+  const direction = Math.sign(startSpeed)
   return { x: -direction * Math.sin(angle), y: direction * Math.cos(angle) }
 }
 
@@ -105,8 +114,6 @@ function heading(degrees: number): Point {
  * leaves the ball travelling at twice its average by the end, so this is set
  * to hand it over to the track at exactly the speed it carries on at.
  */
-const ENTRY_DISTANCE = (Math.abs(BALL_SPEED) * RADIANS * TRACK_RADIUS * APPROACH_S) / 2
-
 /**
  * The ball, `elapsed` ms into a spin that started with the wheel at `from`
  * degrees: thrown in along a tangent, a couple of circuits of the outer
@@ -114,22 +121,23 @@ const ENTRY_DISTANCE = (Math.abs(BALL_SPEED) * RADIANS * TRACK_RADIUS * APPROACH
  * to the wheel's own speed. Past the landing it simply rides round with the
  * wheel.
  */
-export function ballAt(elapsed: number, pocket: number, from = 0): Point {
+export function ballAt(elapsed: number, pocket: number, from = 0, startSpeed = BALL_SPEED): Point {
   if (elapsed >= LANDING_MS) {
     return polar(POCKET_RADIUS, wheelAngle(elapsed, from) + pocketAngle(pocket))
   }
 
-  const contact = contactAngle(pocket, from)
+  const contact = contactAngle(pocket, from, startSpeed)
 
   if (elapsed >= APPROACH_MS) {
     const seconds = (elapsed - APPROACH_MS) / 1000
-    return polar(ballRadius(seconds), contact + ballTravel(seconds))
+    return polar(ballRadius(seconds), contact + ballTravel(seconds, startSpeed))
   }
 
   const progress = Math.max(0, elapsed) / APPROACH_MS
-  const distance = ENTRY_DISTANCE * (1 - progress * progress)
+  const entryDistance = (Math.abs(startSpeed) * RADIANS * TRACK_RADIUS * APPROACH_S) / 2
+  const distance = entryDistance * (1 - progress * progress)
   const touchdown = polar(TRACK_RADIUS, contact)
-  const direction = heading(contact)
+  const direction = heading(contact, startSpeed)
 
   return { x: touchdown.x - direction.x * distance, y: touchdown.y - direction.y * distance }
 }

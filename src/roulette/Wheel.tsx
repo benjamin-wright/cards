@@ -26,6 +26,7 @@ type WheelProps = {
   /** The pocket the ball is heading for, or null for a wheel with no ball. */
   pocket: number | null
   spinning: boolean
+  startSpeed?: number
 }
 
 /**
@@ -42,7 +43,7 @@ type WheelProps = {
  * own, with no ball, until a spin is under way — so switching between betting
  * and spinning never resizes or restarts it.
  */
-export default function Wheel({ pocket, spinning }: WheelProps) {
+export default function Wheel({ pocket, spinning, startSpeed }: WheelProps) {
   const face = useRef<SVGGElement>(null)
   const ball = useRef<SVGCircleElement>(null)
 
@@ -66,7 +67,7 @@ export default function Wheel({ pocket, spinning }: WheelProps) {
 
       const ballNode = ball.current
       if (ballNode !== null && pocket !== null) {
-        const { x, y } = ballAt(elapsed, pocket, from)
+        const { x, y } = ballAt(elapsed, pocket, from, startSpeed)
         ballNode.setAttribute('cx', String(x))
         ballNode.setAttribute('cy', String(y))
       }
@@ -76,7 +77,7 @@ export default function Wheel({ pocket, spinning }: WheelProps) {
 
     frame = requestAnimationFrame(draw)
     return () => cancelAnimationFrame(frame)
-  }, [pocket, spinning])
+  }, [pocket, spinning, startSpeed])
 
   return (
     <svg viewBox={`0 0 ${SIZE} ${SIZE}`} className="roulette-wheel-svg" role="img" aria-label="Roulette wheel">
