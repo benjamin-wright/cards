@@ -19,14 +19,15 @@ board, reveal scored hands, and continue after the hand.
 
 ### Blackjack
 
-Two cards are dealt privately to each player. Players take turns twisting
-(drawing a card) or sticking (keeping their hand); going over 21 ends a turn
-automatically. Aces count as 1 or 11, whichever helps without going bust.
-Once both players have finished, set the phone flat and tap **Show hands**.
+Two cards are dealt privately to each player. Either player can twist
+(draw a card) or stick (keep their hand) whenever the device is tipped towards
+them; going over 21 ends their hand automatically. Aces count as 1 or 11,
+whichever helps without going bust. **Show hands** becomes available only
+after both players have stuck or bust and the phone is flat.
 Their cards slide in from either side onto the shared table; after a short
 pause the win/loss summary appears. The higher non-bust hand earns one point;
-equal hands or two bust hands draw. Scores carry over between hands, and the
-starting player alternates. There is no house or betting, and cash is unaffected.
+equal hands or two bust hands draw. Scores carry over between hands. There is
+no house or betting, and cash is unaffected.
 
 Like the other table games, the device lies flat between players in portrait
 with their seats facing left and right. Tip it towards a player to reveal

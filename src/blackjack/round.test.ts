@@ -17,47 +17,47 @@ function seeded(seed: number) {
 
 describe('createRound', () => {
   it('deals two private cards per player, no house hand, regardless of cash', () => {
-    const round = createRound(players, 'a', seeded(1))
+    const round = createRound(players, seeded(1))
     expect(round.seats.map(seat => seat.cards.length)).toEqual([2, 2])
     expect(round.deck).toHaveLength(48)
     const all = [...round.deck, ...round.seats.flatMap(seat => seat.cards)]
     expect(new Set(all.map(card => `${card.rank}-${card.suit}`)).size).toBe(52)
   })
 
-  it('starts only the selected player and retains seat order', () => {
-    const round = createRound(players, 'b', seeded(2))
-    expect(round.turn).toBe('b')
+  it('starts both players able to play and retains seat order', () => {
+    const round = createRound(players, seeded(2))
     expect(round.seats.map(seat => seat.playerId)).toEqual(['a', 'b'])
-    expect(round.seats.map(seat => seat.status)).toEqual(['waiting', 'playing'])
+    expect(round.seats.map(seat => seat.status)).toEqual(['playing', 'playing'])
   })
 })
 
-describe('turns', () => {
-  it('rejects actions out of turn and changes turns after sticking', () => {
-    const round = createRound(players, 'a', seeded(3))
-    expect(twist(round, 'b')).toBe(round)
-    expect(stick(round, 'b')).toBe(round)
-    const next = stick(round, 'a')
-    expect(next.turn).toBe('b')
-    expect(next.seats.map(seat => seat.status)).toEqual(['stood', 'playing'])
-    expect(twist(next, 'a')).toBe(next)
+describe('independent hands', () => {
+  it('lets either player act first and keeps the other seat unchanged', () => {
+    const round = createRound(players, seeded(3))
+    const next = stick(round, 'b')
+    expect(next.seats.map(seat => seat.status)).toEqual(['playing', 'stood'])
+    expect(next.seats[0]).toBe(round.seats[0])
+    expect(twist(next, 'b')).toBe(next)
+    expect(stick(next, 'a').seats.map(seat => seat.status)).toEqual(['stood', 'stood'])
   })
 
-  it('keeps the turn after a non-bust twist', () => {
-    const round = createRound(players, 'a', seeded(4))
-    const next = twist(round, 'a')
-    expect(next.seats[0].cards).toHaveLength(3)
+  it('deals from one deck in whichever order the players twist', () => {
+    const round = createRound(players, seeded(4))
+    const next = twist(round, 'b')
+    expect(next.seats[1].cards).toHaveLength(3)
+    expect(next.seats[0].cards).toHaveLength(2)
+    expect(next.seats[1].cards[2]).toEqual(round.deck[0])
     expect(next.deck).toHaveLength(47)
-    if (next.seats[0].status === 'playing') expect(next.turn).toBe('a')
   })
 
-  it('moves on automatically after bust and completes after the second player', () => {
-    let round = createRound(players, 'a', seeded(5))
-    while (round.turn === 'a') round = twist(round, 'a')
+  it('ends one hand automatically after bust without stopping the other', () => {
+    let round = createRound(players, seeded(5))
+    while (round.seats[0].status === 'playing') round = twist(round, 'a')
     expect(round.seats[0].status).toBe('bust')
-    expect(round.turn).toBe('b')
+    expect(round.seats[1].status).toBe('playing')
+    expect(twist(round, 'a')).toBe(round)
+    expect(revealHands(round)).toBe(round)
     round = stick(round, 'b')
-    expect(round.turn).toBeNull()
     expect(round.result).toBeNull()
     expect(stick(round, 'b')).toBe(round)
     round = revealHands(round)
@@ -67,8 +67,12 @@ describe('turns', () => {
   })
 
   it('draws when both players bust', () => {
-    let round = createRound(players, 'b', seeded(6))
-    while (round.turn !== null) round = twist(round, round.turn)
+    let round = createRound(players, seeded(6))
+    for (const playerId of ['b', 'a']) {
+      while (round.seats.find(seat => seat.playerId === playerId)?.status === 'playing') {
+        round = twist(round, playerId)
+      }
+    }
     expect(revealHands(round).result?.winnerId).toBeNull()
   })
 
@@ -80,32 +84,44 @@ describe('turns', () => {
 
 describe('revealHands', () => {
   it('withholds the result until both players have completed their turns', () => {
-    const round = createRound(players, 'a', seeded(9))
+    const round = createRound(players, seeded(9))
     expect(revealHands(round)).toBe(round)
-    const secondTurn = stick(round, 'a')
-    expect(revealHands(secondTurn)).toBe(secondTurn)
-    const ready = stick(secondTurn, 'b')
+    const secondHand = stick(round, 'b')
+    expect(revealHands(secondHand)).toBe(secondHand)
+    const ready = stick(secondHand, 'a')
     expect(ready.result).toBeNull()
     expect(revealHands(ready).result?.scores.map(entry => entry.playerId)).toEqual(['a', 'b'])
+    const revealed = revealHands(ready)
+    expect(twist(revealed, 'a')).toBe(revealed)
+    expect(stick(revealed, 'b')).toBe(revealed)
   })
 })
 
 describe('isRound', () => {
   it('accepts active, awaiting reveal and revealed rounds through storage', () => {
-    const round = createRound(players, 'b', seeded(7))
+    const round = createRound(players, seeded(7))
     expect(isRound(JSON.parse(JSON.stringify(round)))).toBe(true)
     const ready = stick(stick(round, 'b'), 'a')
     expect(isRound(JSON.parse(JSON.stringify(ready)))).toBe(true)
     expect(isRound(JSON.parse(JSON.stringify(revealHands(ready))))).toBe(true)
   })
 
-  it('rejects old house/betting state and malformed turns', () => {
-    const round = createRound(players, 'a', seeded(8))
+  it('restores hands saved under the former turn order', () => {
+    const round = createRound(players, seeded(8))
+    const saved = { ...round, turn: 'a', seats: [{ ...round.seats[0] }, { ...round.seats[1], status: 'waiting' as const }] }
+    expect(isRound(saved)).toBe(true)
+    expect(stick(saved, 'b').seats[1].status).toBe('stood')
+    expect(twist(saved, 'b').seats[1].cards).toHaveLength(3)
+  })
+
+  it('rejects malformed seats, deck and results', () => {
+    const round = createRound(players, seeded(8))
     expect(isRound(undefined)).toBe(false)
     expect(isRound({ ...round, seats: [] })).toBe(false)
-    expect(isRound({ ...round, turn: 'b' })).toBe(false)
+    expect(stick(round, 'unknown')).toBe(round)
+    expect(twist(round, 'unknown')).toBe(round)
     expect(isRound({ ...round, deck: [{ rank: 'Z', suit: 'spades' }] })).toBe(false)
-    expect(isRound({ ...round, seats: round.seats.map(seat => ({ ...seat, status: 'playing' })) })).toBe(false)
+    expect(isRound({ ...round, seats: round.seats.map(seat => ({ ...seat, status: 'nonsense' })) })).toBe(false)
     expect(isRound({ ...round, house: [], seats: [{ ...round.seats[0], status: 'playing' }] })).toBe(false)
     const complete = revealHands(stick(stick(round, 'a'), 'b'))
     expect(isRound({ ...complete, result: { winnerId: null, scores: [null, null] } })).toBe(false)

@@ -19,11 +19,10 @@ export type RoundResult = {
 export type Round = {
   deck: Card[]
   seats: Seat[]
-  turn: string | null
   result: RoundResult | null
 }
 
-/** Guards a persisted hand, including the old house-and-bets format. */
+/** Guards a persisted hand, including rounds saved under the old turn order. */
 export function isRound(value: unknown): value is Round {
   if (typeof value !== 'object' || value === null) return false
   const round = value as Partial<Round>
@@ -36,16 +35,11 @@ export function isRound(value: unknown): value is Round {
   })) return false
   const [first, second] = round.seats as Seat[]
   if (first.playerId === second.playerId) return false
-  if (round.result === null && round.turn === null) {
-    return round.seats.every((seat: Seat) => seat.status === 'stood' || seat.status === 'bust')
-  }
   if (round.result === null) {
-    return typeof round.turn === 'string' &&
-      round.seats.filter((seat: Seat) => seat.status === 'playing').length === 1 &&
-      round.seats.some((seat: Seat) => seat.playerId === round.turn && seat.status === 'playing')
+    return true
   }
   const result = round.result as Partial<RoundResult> | undefined
-  return round.turn === null && result !== undefined && result !== null &&
+  return result !== undefined && result !== null &&
     (result.winnerId === null || result.winnerId === first.playerId || result.winnerId === second.playerId) &&
     Array.isArray(result.scores) && result.scores.length === 2 &&
     result.scores.every((entry, index) =>
@@ -54,36 +48,24 @@ export function isRound(value: unknown): value is Round {
     round.seats.every((seat: Seat) => seat.status === 'stood' || seat.status === 'bust')
 }
 
-/** Deal two private cards to each player, starting with the selected seat. */
-export function createRound(players: Player[], starterId = players[0].id, rng: Rng = Math.random): Round {
+/** Deal two private cards to each player; either seat may play first. */
+export function createRound(players: Player[], rng: Rng = Math.random): Round {
   const deck = shuffle(createDeck(), rng)
   const seats: Seat[] = players.map(player => ({
     playerId: player.id,
     name: player.name,
     cards: [],
-    status: player.id === starterId ? 'playing' : 'waiting',
+    status: 'playing',
   }))
   for (let deal = 0; deal < 2; deal += 1) {
     for (const seat of seats) seat.cards.push(deck.shift()!)
   }
-  return { deck, seats, turn: starterId, result: null }
-}
-
-function advance(round: Round): Round {
-  const waiting = round.seats.find(seat => seat.status === 'waiting')
-  if (waiting) {
-    return {
-      ...round,
-      seats: round.seats.map(seat => seat.playerId === waiting.playerId ? { ...seat, status: 'playing' } as Seat : seat),
-      turn: waiting.playerId,
-    }
-  }
-  return { ...round, turn: null }
+  return { deck, seats, result: null }
 }
 
 /** Only score after both players have finished and chosen to share their hands. */
 export function revealHands(round: Round): Round {
-  if (round.turn !== null || round.result !== null ||
+  if (round.result !== null ||
     !round.seats.every(seat => seat.status === 'stood' || seat.status === 'bust')) return round
   const [first, second] = round.seats
   const comparison = compareHands(first.cards, second.cards)
@@ -97,21 +79,23 @@ export function revealHands(round: Round): Round {
 }
 
 export function twist(round: Round, playerId: string): Round {
-  if (round.turn !== playerId || round.deck.length === 0) return round
+  const seat = round.seats.find(entry => entry.playerId === playerId)
+  if (round.result !== null || !seat || (seat.status !== 'playing' && seat.status !== 'waiting') ||
+    round.deck.length === 0) return round
   const [card, ...deck] = round.deck
   const seats = round.seats.map(seat => {
     if (seat.playerId !== playerId) return seat
     const cards = [...seat.cards, card]
     return { ...seat, cards, status: isBust(cards) ? 'bust' : 'playing' } as Seat
   })
-  const next = { ...round, deck, seats }
-  return seats.some(seat => seat.playerId === playerId && seat.status === 'bust') ? advance(next) : next
+  return { ...round, deck, seats }
 }
 
 export function stick(round: Round, playerId: string): Round {
-  if (round.turn !== playerId) return round
-  return advance({
+  const seat = round.seats.find(entry => entry.playerId === playerId)
+  if (round.result !== null || !seat || (seat.status !== 'playing' && seat.status !== 'waiting')) return round
+  return {
     ...round,
     seats: round.seats.map(seat => seat.playerId === playerId ? { ...seat, status: 'stood' } as Seat : seat),
-  })
+  }
 }

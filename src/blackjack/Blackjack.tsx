@@ -10,7 +10,6 @@ import { createRound, isRound, revealHands, stick, twist, type Round, type Seat 
 type BlackjackState = {
   round: Round
   scores: Record<string, number>
-  lastStarterId: string
   /** Absent on older completed hands, which already had their scores awarded. */
   reveal?: 'revealing' | 'summary'
 }
@@ -18,7 +17,7 @@ type BlackjackState = {
 function isBlackjackState(value: unknown): value is BlackjackState {
   if (typeof value !== 'object' || value === null) return false
   const state = value as Partial<BlackjackState>
-  return isRound(state.round) && typeof state.lastStarterId === 'string' &&
+  return isRound(state.round) &&
     (state.reveal === undefined || state.reveal === 'revealing' || state.reveal === 'summary') &&
     typeof state.scores === 'object' && state.scores !== null && !Array.isArray(state.scores) &&
     Object.values(state.scores).every(score => typeof score === 'number' && Number.isFinite(score) && score >= 0)
@@ -37,7 +36,7 @@ function SeatPanel({
   onTwist: () => void
   onStick: () => void
 }) {
-  const active = round.turn === seat.playerId
+  const active = round.result === null && (seat.status === 'playing' || seat.status === 'waiting')
   return (
     <section className="seat-panel">
       <header className="seat-panel-header">
@@ -55,8 +54,8 @@ function SeatPanel({
             : seat.status === 'stood'
               ? `Stuck on ${handScore(seat.cards)}`
               : active
-                ? `Your turn — ${handScore(seat.cards)}`
-                : 'Waiting for your turn'}
+                ? `Your hand — ${handScore(seat.cards)}`
+                : 'Hand complete'}
       </p>
       {active && (
         <div className="panel-actions">
@@ -78,13 +77,13 @@ export default function Blackjack({ players, tilt, onExit }: {
     () => ({
       round: createRound(players),
       scores: Object.fromEntries(players.map(player => [player.id, 0])),
-      lastStarterId: players[0].id,
     }),
     isBlackjackState,
   )
   const { round, scores } = state
   const [left, right] = round.seats
-  const ready = round.turn === null && round.result === null
+  const ready = round.result === null &&
+    round.seats.every(seat => seat.status === 'stood' || seat.status === 'bust')
   const revealing = round.result !== null && state.reveal === 'revealing'
   const summary = round.result !== null && !revealing
 
@@ -126,8 +125,7 @@ export default function Blackjack({ players, tilt, onExit }: {
   const deal = () => {
     setState(current => {
       if (current.round.result === null) return current
-      const starterId = current.lastStarterId === left.playerId ? right.playerId : left.playerId
-      return { ...current, round: createRound(players, starterId), lastStarterId: starterId, reveal: undefined }
+      return { ...current, round: createRound(players), reveal: undefined }
     })
   }
 
@@ -147,15 +145,13 @@ export default function Blackjack({ players, tilt, onExit }: {
         <RotatedSeat degrees={90} revealed={!revealing && !summary && tilt === 'left'}>{panelFor(left)}</RotatedSeat>
         <div className={`blackjack-centre${revealing || summary ? ' blackjack-centre--showdown' : ''}`}>
           <button type="button" className="btn-ghost" onClick={onExit}>Exit</button>
-          {ready ? (
+          {round.result === null ? (
             <>
-              <span>Both players have finished. Set the phone flat to share the hands.</span>
-              <button type="button" className="btn-primary" disabled={tilt !== 'flat'} onClick={showHands}>
+              <span>{ready ? 'Both players have finished. Set the phone flat to share the hands.' : 'Each player can twist or stick when ready'}</span>
+              <button type="button" className="btn-primary" disabled={!ready || tilt !== 'flat'} onClick={showHands}>
                 Show hands
               </button>
             </>
-          ) : round.turn !== null ? (
-            <span>Tilt towards the current player</span>
           ) : null}
         </div>
         <RotatedSeat degrees={-90} revealed={!revealing && !summary && tilt === 'right'}>{panelFor(right)}</RotatedSeat>
