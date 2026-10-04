@@ -7,6 +7,7 @@ import type { Tilt } from '../orientation'
 import { STORAGE_KEYS, usePersistentState } from '../storage'
 import CardFace from '../views/CardFace'
 import RotatedSeat from '../views/RotatedSeat'
+import TableReveal from '../views/TableReveal'
 import { TARGET_SCORE, WILD_RANK } from './rules'
 import {
   canDraw,
@@ -38,6 +39,8 @@ type CrazyEightsState = {
   scores: Record<string, number>
   /** The player who took the last opening turn, so deals alternate. */
   lastStarterId: string | null
+  /** Older settled hands already have their match points applied. */
+  revealed?: boolean
 }
 
 function isScores(value: unknown): value is Record<string, number> {
@@ -56,6 +59,7 @@ function isCrazyEightsState(value: unknown): value is CrazyEightsState {
     value !== null &&
     (state.round === null || isRound(state.round)) &&
     isScores(state.scores) &&
+    (state.revealed === undefined || typeof state.revealed === 'boolean') &&
     (state.lastStarterId === null || typeof state.lastStarterId === 'string')
   )
 }
@@ -293,10 +297,20 @@ export default function CrazyEights({ players, tilt, onExit }: CrazyEightsProps 
         return { ...current, round: next }
       }
 
-      const winnerId = next.result.winnerId
-      const nextScores = { ...current.scores, [winnerId]: (current.scores[winnerId] ?? 0) + next.result.points }
+      return { ...current, round: next, revealed: false }
+    })
+  }
 
-      return { ...current, round: next, scores: nextScores }
+  const showResult = () => {
+    if (tilt !== 'flat') return
+    setState(current => {
+      if (current.round === null || current.round.result === null || current.revealed !== false) return current
+      const { winnerId, points } = current.round.result
+      return {
+        ...current,
+        revealed: true,
+        scores: { ...current.scores, [winnerId]: (current.scores[winnerId] ?? 0) + points },
+      }
     })
   }
 
@@ -319,7 +333,7 @@ export default function CrazyEights({ players, tilt, onExit }: CrazyEightsProps 
     setChoosingSuitFor(null)
     setState(current => {
       const starter = opponentOf(round, current.lastStarterId ?? round.hands[0].playerId).playerId
-      return { ...current, round: createRound(players, starter), lastStarterId: starter }
+      return { ...current, round: createRound(players, starter), lastStarterId: starter, revealed: undefined }
     })
   }
 
@@ -335,9 +349,11 @@ export default function CrazyEights({ players, tilt, onExit }: CrazyEightsProps 
 
   const [left, right] = round.hands
   const facing = tilt === 'left' ? left : tilt === 'right' ? right : null
+  const pending = result !== null && state.revealed === false
+  const publicResult = result !== null && !pending && tilt === 'flat'
 
   const isVisible = (hand: Hand) => {
-    if (result !== null) return true
+    if (result !== null) return false
     return facing?.playerId === hand.playerId
   }
 
@@ -368,7 +384,7 @@ export default function CrazyEights({ players, tilt, onExit }: CrazyEightsProps 
   return (
     <main className="view-rummy view-rummy--table">
       <div className="rummy-table" data-tilt={tilt}>
-        <RotatedSeat degrees={90} revealed={tilt === 'left'}>{panelFor(left)}</RotatedSeat>
+        <RotatedSeat degrees={90} revealed={result === null && tilt === 'left'}>{panelFor(left)}</RotatedSeat>
 
         {/* Shared piles move to the free side when a player's seat opens. */}
         <div className="rummy-centre">
@@ -376,7 +392,9 @@ export default function CrazyEights({ players, tilt, onExit }: CrazyEightsProps 
             Exit
           </button>
 
-          <div className="piles">
+          {pending && <button type="button" className="btn-primary" disabled={tilt !== 'flat'} onClick={showResult}>Show hands</button>}
+          {result !== null && tilt !== 'flat' && <span className="pile-label">Set the phone flat to show the hands</span>}
+          {result === null && <div className="piles">
             <div className="pile">
               <CardFace faceDown />
               <span className="pile-label">{round.stock.length}</span>
@@ -390,19 +408,27 @@ export default function CrazyEights({ players, tilt, onExit }: CrazyEightsProps 
                 <span className="pile-label">+{round.pendingPickup}</span>
               </div>
             )}
-          </div>
+          </div>}
 
         </div>
 
-        <RotatedSeat degrees={-90} revealed={tilt === 'right'}>{panelFor(right)}</RotatedSeat>
+        <RotatedSeat degrees={-90} revealed={result === null && tilt === 'right'}>{panelFor(right)}</RotatedSeat>
+        {publicResult && (
+          <TableReveal
+            hands={round.hands.map(hand => ({
+              playerId: hand.playerId,
+              name: hand.name,
+              cards: hand.cards,
+              detail: `${hand.cards.length} cards left · ${scores[hand.playerId] ?? 0} pts`,
+            }))}
+            title={`${resultMessage(result)}${matchWinnerName === null ? '' : ` — ${matchWinnerName} wins the game!`}`}
+            onContinue={matchWinnerName === null ? deal : newGame}
+            continueLabel={matchWinnerName === null ? 'Next hand' : 'New game'}
+            onExit={onExit}
+          />
+        )}
       </div>
 
-      {result !== null && (
-        <div className="rummy-centre">
-          <p className="seat-panel-result">{resultMessage(result)}</p>
-          {matchWinnerName !== null && <p className="seat-panel-result">{matchWinnerName} wins the game!</p>}
-        </div>
-      )}
     </main>
   )
 }

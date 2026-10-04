@@ -12,17 +12,26 @@ Game state is kept in local storage, so refreshing the page resumes wherever
 you left off, and every game screen has an "Exit" button back to game
 selection (which abandons the hand in progress).
 
+In Crazy Eights, players keep their moves private until a finished hand is
+revealed with **Show hands** on a flat device. In cribbage, discards and card
+choices happen in private seats; lay the device flat to inspect the public
+board, reveal scored hands, and continue after the hand.
+
 ### Blackjack
 
-Two cards are dealt face down to each player and the house, with the house
-dealt last. Each player views their own cards, may
-raise their £1 entry bet using the £1, £10 and £100 buttons (press them as
-often as you like, up to the cash you hold), then twists or sticks. Betting
-closes for that player as soon as they twist. Aces
-count as 1 or 11 in the player's favour, over 21 is bust, and the house always
-twists below 15 and sticks on 15 or more. Beat the house to double your bet,
-lose it if the house wins, or get it back on a draw. Every hand ends with all
-cards revealed and a summary of winnings, losses and new totals.
+Two cards are dealt privately to each player. Either player can twist
+(draw a card) or stick (keep their hand) whenever the device is tipped towards
+them; going over 21 ends their hand automatically. Aces count as 1 or 11,
+whichever helps without going bust. **Show hands** becomes available only
+after both players have stuck or bust and the phone is flat.
+Their cards slide in from either side onto the shared table; after a short
+pause the win/loss summary appears. The higher non-bust hand earns one point;
+equal hands or two bust hands draw. Scores carry over between hands. There is
+no house or betting, and cash is unaffected.
+
+Like the other table games, the device lies flat between players in portrait
+with their seats facing left and right. Tip it towards a player to reveal
+only their own hand and controls; both hands stay hidden while flat.
 
 ### Rummy
 
@@ -41,6 +50,9 @@ automatically, then the knocker scores the difference — unless the defender
 matches or beats it, which is an undercut worth the difference plus 25. Gin is
 worth the defender's whole hand plus 25, and the hand is abandoned as a draw if
 the stock runs down to two cards. First to 100 points wins the game.
+
+When a hand ends, set the device flat and tap **Show hands** to reveal both
+hands and the outcome together. Match points are added at the reveal.
 
 Hands are dealt face down so neither player can read the other's cards. The
 table is laid out for a device lying flat between the two players, with the
@@ -74,19 +86,24 @@ with hands face down until the device is tipped towards a player.
 ### Roulette
 
 Single-zero roulette for the same two players, staked from the shared cash
-pile. Players take it in turns to place their chips on one shared board —
+pile. Either player can tip the device towards themselves to place chips at
+any time on their own private board —
 straight up numbers (35 to 1), the three column and dozen bets (2 to 1) and the
 even money red/black, odd/even and high/low bets. Tap a spot to add the
 selected £1, £5 or £10 chip, press and hold a spot to take that stake back off,
 or use "Clear" to lift the lot. Nobody can stake more than the cash they hold.
 
-Keep the page in portrait like the other table games; the board is
-turned a quarter turn so it reads as a landscape betting layout facing whoever
-is betting. The wheel turns away behind the board the whole time, with the
-betting spots left slightly see-through so it shows through them. The board
-only accepts chips while the device is angled towards the player whose turn it is.
+When both players are ready, set the device flat and tap **SPIN** in the
+middle of the wheel. At least one bet is needed; either player may sit out.
+Bets and the result are then shown on the shared table.
 
-Once both players have finished, the board fades away and the bets are listed
+Keep the page in portrait like the other table games; the board is
+turned a quarter turn so it reads as a landscape betting layout facing the
+player placing chips. The wheel turns away behind the board the whole time, with the
+betting spots left slightly see-through so it shows through them. The board
+only accepts chips while the device is angled towards that player.
+
+Once **SPIN** is pressed, the board fades away and the bets are listed
 underneath the wheel. The same wheel is used at the same size throughout and is
 never remounted, so the switch is only the board fading out and the blur over
 the wheel lifting — nothing slides or resizes. The wheel itself turns at a slow, constant
@@ -101,7 +118,7 @@ is worked backwards from where that pocket will be when the ball stops, so the
 ball is never nudged mid-flight and refreshing part way through settles on the
 same number.
 
-If a spin leaves either player short of the £1 minimum, that summary is still
+If a spin leaves both players short of the £1 minimum, that summary is still
 shown with the final balances — it just drops the "Next spin" button, since
 there's nothing left to bet with.
 

@@ -396,50 +396,134 @@ button:disabled {
   padding: 40px 16px;
 }
 
-/* ─── Blackjack table (landscape, two players facing each other) ── */
+/* ─── Blackjack table ───────────────────────────────────────── */
 .view-blackjack--table {
-  padding: 12px;
-  gap: 12px;
-  justify-content: space-between;
-}
-
-.table {
-  flex: 1;
-  width: 100%;
-  display: grid;
-  grid-template-columns: 1fr;
-  grid-template-areas: 'bar' 'top' 'house' 'bottom';
-  align-items: center;
-  justify-items: center;
-  gap: 12px;
+  align-items: stretch;
+  padding: 0;
+  gap: 0;
   min-height: 0;
 }
 
-/* Groups the game bar with the house so a landscape layout can move both
-   into one side column, leaving the seat panels the full column height.
-   In portrait it's just a grouping wrapper — `display: contents` lets its
-   children (the bar and the house) take their own grid areas directly. */
-.table-side {
-  display: contents;
-}
-
-.game-bar {
-  grid-area: bar;
-}
-
-.seat-area {
+.blackjack-table {
+  position: relative;
+  flex: 1;
   width: 100%;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  min-height: 0;
+}
+
+.blackjack-centre {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
   display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  color: white;
+  pointer-events: none;
+  text-align: center;
+}
+
+.blackjack-centre button {
+  pointer-events: auto;
+}
+
+.blackjack-table[data-tilt='left'] .blackjack-centre:not(.blackjack-centre--showdown) {
+  transform: translateX(25%);
+}
+
+.blackjack-table[data-tilt='right'] .blackjack-centre:not(.blackjack-centre--showdown) {
+  transform: translateX(-25%);
+}
+
+.blackjack-table .seat-panel {
+  max-width: 100%;
+  max-height: 100%;
+  overflow-y: auto;
+}
+
+.blackjack-table .hand {
+  flex-wrap: wrap;
   justify-content: center;
 }
 
-.seat-area--top {
-  grid-area: top;
-  transform: rotate(180deg);
+.blackjack-centre--showdown {
+  justify-content: flex-start;
+  align-items: flex-end;
+  padding: 12px;
 }
 
-.seat-area--bottom {
-  grid-area: bottom;
+.blackjack-showdown {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-evenly;
+  align-items: center;
+  gap: 12px;
+  padding: 48px 12px 12px;
+  color: white;
+  text-align: center;
+  overflow-y: auto;
+}
+
+.blackjack-showdown-hand {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.blackjack-showdown-hand .hand {
+  gap: 4px;
+}
+
+.blackjack-showdown-card {
+  display: inline-flex;
+}
+
+.blackjack-showdown--entering .blackjack-showdown-hand--left .blackjack-showdown-card {
+  animation: blackjack-throw-left 750ms both ease-out;
+  animation-delay: inherit;
+}
+
+.blackjack-showdown--entering .blackjack-showdown-hand--right .blackjack-showdown-card {
+  animation: blackjack-throw-right 750ms both ease-out;
+  animation-delay: inherit;
+}
+
+@keyframes blackjack-throw-left {
+  from { opacity: 0; transform: translateX(-110vw) rotate(-25deg); }
+  to { opacity: 1; transform: translateX(0) rotate(0); }
+}
+
+@keyframes blackjack-throw-right {
+  from { opacity: 0; transform: translateX(110vw) rotate(25deg); }
+  to { opacity: 1; transform: translateX(0) rotate(0); }
+}
+
+.blackjack-summary {
+  flex-shrink: 0;
+  width: min(90%, 360px);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  background: var(--surface);
+  color: var(--text-strong);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--card-shadow);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .blackjack-showdown--entering .blackjack-showdown-card {
+    animation: none !important;
+  }
 }
 
 .seat-panel {
@@ -460,24 +544,40 @@ button:disabled {
   border-left-color: var(--accent);
 }
 
+.table-reveal {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: safe center;
+  gap: 12px;
+  padding: 52px 16px 24px;
+  overflow-y: auto;
+  color: white;
+  text-align: center;
+  background: var(--bg);
+}
+
+.table-reveal-hand {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+}
+
+.table-reveal-hand .hand {
+  gap: 4px;
+}
+
+.table-reveal-hand .hand-card {
+  width: clamp(30px, 10vw, 54px);
+}
+
 .seat-panel--lose {
   border-left-color: var(--red);
-}
-
-.seat-panel-row {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 10px;
-  width: 100%;
-}
-
-.seat-panel-info {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 10px;
-  width: 100%;
 }
 
 .seat-panel-header {
@@ -497,107 +597,6 @@ button:disabled {
   font-weight: 700;
   color: var(--text-muted);
   white-space: nowrap;
-}
-
-.house-area {
-  grid-area: house;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 6px;
-  color: #fff;
-}
-
-.house-area h2 {
-  font-size: 0.8rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  color: rgba(255, 255, 255, 0.85);
-}
-
-.house-area .hint {
-  color: rgba(255, 255, 255, 0.75);
-}
-
-/* On a landscape screen there's little spare height, so the game bar and
-   house are grouped into one side column (`.table-side`, now a real flex
-   column instead of `display: contents`), leaving the other column's full
-   height for the two seat panels. Each seat panel also splits into a row —
-   raises on the left, cards in the middle, twist/stick on the right —
-   instead of stacking everything vertically. */
-@media (orientation: landscape) {
-  .table {
-    grid-template-columns: 1fr auto;
-    grid-template-rows: 1fr 1fr;
-    grid-template-areas: 'top side' 'bottom side';
-    align-items: stretch;
-    justify-items: stretch;
-    gap: 10px;
-  }
-
-  .seat-area {
-    align-items: center;
-  }
-
-  .table-side {
-    display: flex;
-    flex-direction: column;
-    grid-area: side;
-    height: 100%;
-  }
-
-  .game-bar {
-    flex-shrink: 0;
-  }
-
-  .house-area {
-    flex: 1;
-    justify-content: center;
-    padding: 0 8px;
-  }
-
-  .seat-panel {
-    max-width: none;
-    gap: 6px;
-    padding: 10px 16px;
-  }
-
-  .seat-panel-row {
-    flex-direction: row;
-    justify-content: center;
-    align-items: center;
-    gap: 14px;
-  }
-
-  .seat-panel-info {
-    flex: 1;
-    min-width: 0;
-  }
-
-  .seat-panel-row .bet-actions {
-    order: -1;
-    flex-direction: column;
-    flex-wrap: nowrap;
-    flex-shrink: 0;
-  }
-
-  .seat-panel-row .panel-actions {
-    order: 1;
-    flex-direction: column;
-    flex-wrap: nowrap;
-    flex-shrink: 0;
-  }
-
-  .house-area .hand,
-  .seat-panel .hand {
-    gap: 4px;
-  }
-
-  .house-area .hand-card,
-  .seat-panel .hand-card {
-    width: 40px;
-  }
 }
 
 .player-list {
@@ -763,8 +762,7 @@ button:disabled {
   padding: 40px 16px;
 }
 
-/* The table ignores blackjack's orientation queries: each seat is turned to
-   face its player, while the gate covers the table if the page rotates. */
+/* Each table seat faces its player; the gate covers the table if the page rotates. */
 .view-rummy--table {
   align-items: stretch;
   padding: 0;
@@ -1039,6 +1037,34 @@ button.hand-card:not(:disabled):hover {
   min-width: 0;
   overflow: hidden;
   transition: left 350ms ease-in-out;
+}
+
+.cribbage-board-mask {
+  position: absolute;
+  inset: 56px 0 0;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px;
+  color: white;
+  text-align: center;
+  background: var(--bg);
+}
+
+.cribbage-public-result {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 24px;
+  color: white;
+  background: var(--bg);
+  text-align: center;
 }
 
 .cribbage-table[data-tilt='left'] .cribbage-board-container {
@@ -1424,6 +1450,34 @@ button.hand-card:not(:disabled):hover {
 
 .view-roulette--flat .roulette-stage {
   opacity: 1;
+  z-index: 2;
+}
+
+.roulette-wheel-spin {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: auto;
+  border-radius: 50%;
+  width: 72px;
+  height: 72px;
+  padding: 0;
+  font-weight: 700;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.6);
+}
+
+.roulette-flat-cover {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: var(--bg);
+  color: white;
+  text-align: center;
 }
 
 .view-roulette--spinning .roulette-stage {
