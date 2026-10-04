@@ -1,21 +1,25 @@
+import { useEffect } from 'react'
 import type { Player } from '../players'
 import type { Tilt } from '../orientation'
 import { STORAGE_KEYS, usePersistentState } from '../storage'
 import CardFace from '../views/CardFace'
 import RotatedSeat from '../views/RotatedSeat'
 import { handScore } from './engine'
-import { createRound, isRound, stick, twist, type Round, type Seat } from './round'
+import { createRound, isRound, revealHands, stick, twist, type Round, type Seat } from './round'
 
 type BlackjackState = {
   round: Round
   scores: Record<string, number>
   lastStarterId: string
+  /** Absent on older completed hands, which already had their scores awarded. */
+  reveal?: 'revealing' | 'summary'
 }
 
 function isBlackjackState(value: unknown): value is BlackjackState {
   if (typeof value !== 'object' || value === null) return false
   const state = value as Partial<BlackjackState>
   return isRound(state.round) && typeof state.lastStarterId === 'string' &&
+    (state.reveal === undefined || state.reveal === 'revealing' || state.reveal === 'summary') &&
     typeof state.scores === 'object' && state.scores !== null && !Array.isArray(state.scores) &&
     Object.values(state.scores).every(score => typeof score === 'number' && Number.isFinite(score) && score >= 0)
 }
@@ -26,17 +30,14 @@ function SeatPanel({
   points,
   onTwist,
   onStick,
-  onDeal,
 }: {
   seat: Seat
   round: Round
   points: number
   onTwist: () => void
   onStick: () => void
-  onDeal: () => void
 }) {
   const active = round.turn === seat.playerId
-  const result = round.result
   return (
     <section className="seat-panel">
       <header className="seat-panel-header">
@@ -49,9 +50,7 @@ function SeatPanel({
         ))}
       </span>
       <p className="hint">
-        {result !== null
-          ? `${result.winnerId === seat.playerId ? 'Won +1 point' : result.winnerId === null ? 'Draw' : 'Lost'} — ${handScore(seat.cards)}`
-          : seat.status === 'bust'
+        {seat.status === 'bust'
             ? `Bust on ${handScore(seat.cards)}`
             : seat.status === 'stood'
               ? `Stuck on ${handScore(seat.cards)}`
@@ -64,9 +63,6 @@ function SeatPanel({
           <button type="button" className="btn-primary" onClick={onTwist}>Twist</button>
           <button type="button" className="btn-secondary" onClick={onStick}>Stick</button>
         </div>
-      )}
-      {result !== null && (
-        <button type="button" className="btn-primary" onClick={onDeal}>Next hand</button>
       )}
     </section>
   )
@@ -88,15 +84,39 @@ export default function Blackjack({ players, tilt, onExit }: {
   )
   const { round, scores } = state
   const [left, right] = round.seats
+  const ready = round.turn === null && round.result === null
+  const revealing = round.result !== null && state.reveal === 'revealing'
+  const summary = round.result !== null && !revealing
+
+  useEffect(() => {
+    if (!revealing) return
+    const timeout = window.setTimeout(() => {
+      setState(current => current.reveal === 'revealing'
+        ? { ...current, reveal: 'summary' }
+        : current)
+    }, 1400)
+    return () => window.clearTimeout(timeout)
+  }, [revealing, setState])
 
   const act = (next: Round) => {
     setState(current => {
       if (current.round !== round) return current
+      return { ...current, round: next }
+    })
+  }
+
+  const showHands = () => {
+    if (tilt !== 'flat') return
+    setState(current => {
+      if (current.round !== round) return current
+      const next = revealHands(current.round)
+      if (next === current.round) return current
       const winnerId = next.result?.winnerId
       return {
         ...current,
         round: next,
-        scores: round.result === null && winnerId
+        reveal: 'revealing',
+        scores: winnerId
           ? { ...current.scores, [winnerId]: (current.scores[winnerId] ?? 0) + 1 }
           : current.scores,
       }
@@ -107,7 +127,7 @@ export default function Blackjack({ players, tilt, onExit }: {
     setState(current => {
       if (current.round.result === null) return current
       const starterId = current.lastStarterId === left.playerId ? right.playerId : left.playerId
-      return { ...current, round: createRound(players, starterId), lastStarterId: starterId }
+      return { ...current, round: createRound(players, starterId), lastStarterId: starterId, reveal: undefined }
     })
   }
 
@@ -118,19 +138,59 @@ export default function Blackjack({ players, tilt, onExit }: {
       points={scores[seat.playerId] ?? 0}
       onTwist={() => act(twist(round, seat.playerId))}
       onStick={() => act(stick(round, seat.playerId))}
-      onDeal={deal}
     />
   )
 
   return (
     <main className="view-blackjack view-blackjack--table">
       <div className="blackjack-table" data-tilt={tilt}>
-        <RotatedSeat degrees={90} revealed={tilt === 'left'}>{panelFor(left)}</RotatedSeat>
-        <div className="blackjack-centre">
+        <RotatedSeat degrees={90} revealed={!revealing && !summary && tilt === 'left'}>{panelFor(left)}</RotatedSeat>
+        <div className={`blackjack-centre${revealing || summary ? ' blackjack-centre--showdown' : ''}`}>
           <button type="button" className="btn-ghost" onClick={onExit}>Exit</button>
-          <span>{round.result === null ? 'Tilt towards the current player' : 'Hand complete'}</span>
+          {ready ? (
+            <>
+              <span>Both players have finished. Set the phone flat to share the hands.</span>
+              <button type="button" className="btn-primary" disabled={tilt !== 'flat'} onClick={showHands}>
+                Show hands
+              </button>
+            </>
+          ) : round.turn !== null ? (
+            <span>Tilt towards the current player</span>
+          ) : null}
         </div>
-        <RotatedSeat degrees={-90} revealed={tilt === 'right'}>{panelFor(right)}</RotatedSeat>
+        <RotatedSeat degrees={-90} revealed={!revealing && !summary && tilt === 'right'}>{panelFor(right)}</RotatedSeat>
+        {(revealing || summary) && (
+          <div className={`blackjack-showdown${revealing ? ' blackjack-showdown--entering' : ''}`}>
+            {round.seats.map((seat, index) => (
+              <div key={seat.playerId} className={`blackjack-showdown-hand blackjack-showdown-hand--${index === 0 ? 'left' : 'right'}`}>
+                <h2>{seat.name}</h2>
+                <span className="hand">
+                  {seat.cards.map((card, cardIndex) => (
+                    <span key={`${card.rank}-${card.suit}`} className="blackjack-showdown-card" style={{ animationDelay: `${cardIndex * 80}ms` }}>
+                      <CardFace card={card} />
+                    </span>
+                  ))}
+                </span>
+                <span>{handScore(seat.cards)}{seat.status === 'bust' ? ' — Bust' : ''}</span>
+              </div>
+            ))}
+            {summary && (
+              <div className="blackjack-summary" role="dialog" aria-labelledby="blackjack-summary-title">
+                <h2 id="blackjack-summary-title">
+                  {round.result?.winnerId === null
+                    ? 'Draw'
+                    : `${round.seats.find(seat => seat.playerId === round.result?.winnerId)?.name} wins!`}
+                </h2>
+                <p>
+                  {round.seats.map(seat =>
+                    `${seat.name}: ${round.result?.winnerId === seat.playerId ? 'Win +1 point' : round.result?.winnerId === null ? 'Draw' : 'Loss'} — ${scores[seat.playerId] ?? 0} points`
+                  ).join(' · ')}
+                </p>
+                <button type="button" className="btn-primary" onClick={deal}>Next hand</button>
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </main>
   )

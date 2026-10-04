@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { Player } from '../players'
-import { createRound, isRound, stick, twist } from './round'
+import { createRound, isRound, revealHands, stick, twist } from './round'
 
 const players: Player[] = [
   { id: 'a', name: 'Ada', cash: 0 },
@@ -58,15 +58,18 @@ describe('turns', () => {
     expect(round.turn).toBe('b')
     round = stick(round, 'b')
     expect(round.turn).toBeNull()
+    expect(round.result).toBeNull()
+    expect(stick(round, 'b')).toBe(round)
+    round = revealHands(round)
     expect(round.result?.winnerId).toBe('b')
     expect(round.result?.scores).toHaveLength(2)
-    expect(stick(round, 'b')).toBe(round)
+    expect(revealHands(round)).toBe(round)
   })
 
   it('draws when both players bust', () => {
     let round = createRound(players, 'b', seeded(6))
     while (round.turn !== null) round = twist(round, round.turn)
-    expect(round.result?.winnerId).toBeNull()
+    expect(revealHands(round).result?.winnerId).toBeNull()
   })
 
   it('does not allow a twist when the deck is empty', () => {
@@ -75,11 +78,25 @@ describe('turns', () => {
   })
 })
 
+describe('revealHands', () => {
+  it('withholds the result until both players have completed their turns', () => {
+    const round = createRound(players, 'a', seeded(9))
+    expect(revealHands(round)).toBe(round)
+    const secondTurn = stick(round, 'a')
+    expect(revealHands(secondTurn)).toBe(secondTurn)
+    const ready = stick(secondTurn, 'b')
+    expect(ready.result).toBeNull()
+    expect(revealHands(ready).result?.scores.map(entry => entry.playerId)).toEqual(['a', 'b'])
+  })
+})
+
 describe('isRound', () => {
-  it('accepts active and complete rounds through storage', () => {
+  it('accepts active, awaiting reveal and revealed rounds through storage', () => {
     const round = createRound(players, 'b', seeded(7))
     expect(isRound(JSON.parse(JSON.stringify(round)))).toBe(true)
-    expect(isRound(JSON.parse(JSON.stringify(stick(stick(round, 'b'), 'a'))))).toBe(true)
+    const ready = stick(stick(round, 'b'), 'a')
+    expect(isRound(JSON.parse(JSON.stringify(ready)))).toBe(true)
+    expect(isRound(JSON.parse(JSON.stringify(revealHands(ready))))).toBe(true)
   })
 
   it('rejects old house/betting state and malformed turns', () => {
@@ -90,7 +107,7 @@ describe('isRound', () => {
     expect(isRound({ ...round, deck: [{ rank: 'Z', suit: 'spades' }] })).toBe(false)
     expect(isRound({ ...round, seats: round.seats.map(seat => ({ ...seat, status: 'playing' })) })).toBe(false)
     expect(isRound({ ...round, house: [], seats: [{ ...round.seats[0], status: 'playing' }] })).toBe(false)
-    const complete = stick(stick(round, 'a'), 'b')
+    const complete = revealHands(stick(stick(round, 'a'), 'b'))
     expect(isRound({ ...complete, result: { winnerId: null, scores: [null, null] } })).toBe(false)
   })
 })

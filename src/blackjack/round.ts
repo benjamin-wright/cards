@@ -36,6 +36,9 @@ export function isRound(value: unknown): value is Round {
   })) return false
   const [first, second] = round.seats as Seat[]
   if (first.playerId === second.playerId) return false
+  if (round.result === null && round.turn === null) {
+    return round.seats.every((seat: Seat) => seat.status === 'stood' || seat.status === 'bust')
+  }
   if (round.result === null) {
     return typeof round.turn === 'string' &&
       round.seats.filter((seat: Seat) => seat.status === 'playing').length === 1 &&
@@ -75,11 +78,17 @@ function advance(round: Round): Round {
       turn: waiting.playerId,
     }
   }
+  return { ...round, turn: null }
+}
+
+/** Only score after both players have finished and chosen to share their hands. */
+export function revealHands(round: Round): Round {
+  if (round.turn !== null || round.result !== null ||
+    !round.seats.every(seat => seat.status === 'stood' || seat.status === 'bust')) return round
   const [first, second] = round.seats
   const comparison = compareHands(first.cards, second.cards)
   return {
     ...round,
-    turn: null,
     result: {
       winnerId: comparison === 0 ? null : comparison > 0 ? first.playerId : second.playerId,
       scores: round.seats.map(seat => ({ playerId: seat.playerId, score: handScore(seat.cards) })),
